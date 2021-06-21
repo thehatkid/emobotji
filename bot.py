@@ -37,7 +37,7 @@ log.info('Starting discord.py {0} {1}...'.format(
 ))
 
 # Initialize Bot Class
-bot = commands.Bot(command_prefix='e!', help_command=None)
+bot = commands.Bot(command_prefix=environ.get('BOT_PREFIX'), help_command=None)
 bot.db = database
 bot.start_time = time.time()
 

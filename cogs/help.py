@@ -1,4 +1,5 @@
 import logging
+from os import environ
 import discord
 from discord.ext import commands
 
@@ -7,6 +8,9 @@ log = logging.getLogger(__name__)
 
 
 class Help(commands.Cog):
+    def __init__(self, _):
+        self.prefix = environ.get('BOT_PREFIX')
+
     @commands.group(invoke_without_command=True)
     async def help(self, ctx):
         embed = discord.Embed(
@@ -19,7 +23,7 @@ class Help(commands.Cog):
             ),
             icon_url=ctx.author.avatar_url
         )
-        embed.description = '**To see command usage:**\n`e!help <command>`'
+        embed.description = f'**To see command usage:**\n`{self.prefix}help <command>`'
         embed.add_field(
             name='Bot',
             value='`ping`',
@@ -27,7 +31,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Emoji',
-            value='`list`, `react`, `add`',
+            value='`list`, `react`, `add`, `add-from-url`',
             inline=False
         )
         await ctx.send(embed=embed)
@@ -40,7 +44,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value='`e!ping`',
+            value=f'`{self.prefix}ping`',
             inline=False
         )
         embed.add_field(
@@ -58,7 +62,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value='`e!list [<page of list>]`',
+            value=f'`{self.prefix}list [<page of list>]`',
             inline=False
         )
         embed.add_field(
@@ -76,7 +80,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value='`e!list <name of emoji> <message id from this channel>`',
+            value=f'`{self.prefix}list <name of emoji> <message id from this channel>`',
             inline=False
         )
         embed.add_field(
@@ -94,12 +98,30 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value='`e!list <name of emoji> <custom emoji>`',
+            value=f'`{self.prefix}list <name of emoji> <custom emoji>`',
             inline=False
         )
         embed.add_field(
             name='Description',
             value='Adds custom emoji to bot for further using.',
+            inline=False
+        )
+        await ctx.send(embed=embed)
+
+    @help.command(name='add-from-url')
+    async def add_from_url(self, ctx):
+        embed = discord.Embed(
+            title=':information_source: Command: Add From URL',
+            colour=discord.Colour.blurple()
+        )
+        embed.add_field(
+            name='Usage',
+            value=f'`{self.prefix}add-from-url <name of emoji> <url with image>`',
+            inline=False
+        )
+        embed.add_field(
+            name='Description',
+            value='Adds custom emoji to bot from URL with Image.',
             inline=False
         )
         await ctx.send(embed=embed)

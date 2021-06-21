@@ -6,9 +6,6 @@ import asyncio
 import discord
 from discord.ext import commands
 from discord_components import DiscordComponents
-from discord_components import InteractionType
-from discord_components import Button
-from discord_components import ButtonStyle
 
 
 log = logging.getLogger(__name__)
@@ -66,62 +63,6 @@ class Events(commands.Cog):
         else:
             print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-
-    @commands.Cog.listener()
-    async def on_button_click(self, res):
-        if res.component.id.startswith('list_'):
-            if res.component.id == 'list_close':
-                await res.respond(
-                    type=InteractionType.UpdateMessage,
-                    embed=discord.Embed(title=':x: List was closed.'),
-                    components=[]
-                )
-            elif res.component.id.startswith('list_page:'):
-                page = int(res.component.id.split(':')[1])
-                count = await self.db.fetch_one('SELECT COUNT(*) FROM `emojis`')
-                limit = 10
-                total = ceil(count[0] / limit)
-                if page > total:
-                    page = total
-                offset = (limit * page) - limit
-                rows = await self.db.fetch_all(
-                    'SELECT `id`, `name`, `animated` FROM `emojis` ORDER BY `name` ASC LIMIT :limit OFFSET :offset',
-                    {'limit': limit, 'offset': offset}
-                )
-                embed = discord.Embed(title='Bot\'s Emoji List', colour=discord.Colour.blurple())
-                embed.set_footer(text='Page: {0} of {1}'.format(page, total))
-                desc = ''
-                for emoji in rows:
-                    if emoji[2]:
-                        desc += '<a:{0}:{1}> :{0}:\n'.format(emoji[1], emoji[0])
-                    else:
-                        desc += '<:{0}:{1}> :{0}:\n'.format(emoji[1], emoji[0])
-                if not desc:
-                    desc = 'Empty...'
-                embed.description = desc
-                buttons = [
-                    Button(
-                        id='list_page:{}'.format(page - 1),
-                        emoji=u'\U000025C0',
-                        style=ButtonStyle.grey,
-                        disabled=(True if page <= 1 else False)
-                    ),
-                    Button(
-                        id='list_page:{}'.format(page + 1),
-                        emoji=u'\U000025B6',
-                        style=ButtonStyle.grey,
-                        disabled=(True if page >= total else False)
-                    ),
-                    Button(
-                        id='list_close',
-                        emoji=u'\U00002716',
-                        style=ButtonStyle.red
-                    )
-                ]
-                await res.respond(
-                    type=InteractionType.UpdateMessage,
-                    embed=embed, components=[buttons]
-                )
 
 
 def setup(bot):
