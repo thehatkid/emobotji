@@ -169,8 +169,92 @@ class Commands(commands.Cog):
                     ]
                     await res.respond(type=InteractionType.UpdateMessage, embed=embed, components=[buttons])
 
+    @commands.command(name='search', description='Searching emoji in database.')
+    async def search(self, ctx, name: str):
+        count = await self.db.fetch_one('SELECT COUNT(*) FROM `emojis` WHERE `name` LIKE :name', {'name': f'%{name}%'})
+        page = 1
+        limit = 10
+        total = ceil(count[0] / limit)
+        offset = (limit * page) - limit
+
+        rows = await self.db.fetch_all(
+            'SELECT `id`, `name`, `animated` FROM `emojis` WHERE `name` LIKE :name ORDER BY `name` ASC LIMIT :limit OFFSET :offset',
+            {'name': f'%{name}%', 'limit': limit, 'offset': offset}
+        )
+
+        embed = discord.Embed(title=f'Searching: `{name}`', colour=discord.Colour.blurple())
+        embed.set_footer(text='Page: {0} of {1}'.format(page, total))
+        desc = ''
+
+        for emoji in rows:
+            if emoji[2]:
+                desc += '<a:{0}:{1}> [\:{0}\:](https://cdn.discordapp.com/emojis/{1}.gif)\n'.format(emoji[1], emoji[0])
+            else:
+                desc += '<:{0}:{1}> [\:{0}\:](https://cdn.discordapp.com/emojis/{1}.png)\n'.format(emoji[1], emoji[0])
+        if not desc:
+            desc = 'Empty...'
+        embed.description = desc
+
+        buttons = [
+            Button(id='list_page:{}'.format(page - 1), emoji=u'\U000025C0', style=ButtonStyle.grey,disabled=True if page <= 1 else False),
+            Button(id='list_page:{}'.format(page + 1), emoji=u'\U000025B6', style=ButtonStyle.grey, disabled=True if page >= total else False),
+            Button(id='list_close', emoji=u'\U00002716', style=ButtonStyle.red)
+        ]
+        msg = await ctx.send(embed=embed, components=[buttons])
+
+        def check(res):
+            return res.message.id == msg.id and res.user.id == ctx.author.id and res.channel.id == ctx.channel.id
+
+        while True:
+            try:
+                res = await self.bot.wait_for('button_click', check=check, timeout=120)
+            except asyncio.TimeoutError:
+                embed = discord.Embed(title=':x: List was closed.', description='Reason: *Timeout.*')
+                await msg.edit(embed=embed, components=[])
+                break
+            else:
+                if res.component.id == 'list_close':
+                    embed = discord.Embed(title=':x: List was closed.', description='Reason: *Closed by user.*')
+                    await res.respond(type=InteractionType.UpdateMessage, embed=embed, components=[])
+                    break
+                elif res.component.id.startswith('list_page:'):
+                    page = int(res.component.id.split(':')[1])
+                    count = await self.db.fetch_one('SELECT COUNT(*) FROM `emojis` WHERE `name` LIKE :name', {'name': f'%{name}%'})
+                    limit = 10
+                    total = ceil(count[0] / limit)
+
+                    if page > total:
+                        page = total
+
+                    offset = (limit * page) - limit
+
+                    rows = await self.db.fetch_all(
+                        'SELECT `id`, `name`, `animated` FROM `emojis` WHERE `name` LIKE :name ORDER BY `name` ASC LIMIT :limit OFFSET :offset',
+                        {'name': f'%{name}%', 'limit': limit, 'offset': offset}
+                    )
+
+                    embed = discord.Embed(title=f'Searching: `{name}`', colour=discord.Colour.blurple())
+                    embed.set_footer(text='Page: {0} of {1}'.format(page, total))
+                    desc = ''
+
+                    for emoji in rows:
+                        if emoji[2]:
+                            desc += '<a:{0}:{1}> [\:{0}\:](https://cdn.discordapp.com/emojis/{1}.gif)\n'.format(emoji[1], emoji[0])
+                        else:
+                            desc += '<:{0}:{1}> [\:{0}\:](https://cdn.discordapp.com/emojis/{1}.png)\n'.format(emoji[1], emoji[0])
+                    if not desc:
+                        desc = 'Empty...'
+                    embed.description = desc
+
+                    buttons = [
+                        Button(id='list_page:{}'.format(page - 1), emoji=u'\U000025C0', style=ButtonStyle.grey,disabled=True if page <= 1 else False),
+                        Button(id='list_page:{}'.format(page + 1), emoji=u'\U000025B6', style=ButtonStyle.grey, disabled=True if page >= total else False),
+                        Button(id='list_close', emoji=u'\U00002716', style=ButtonStyle.red)
+                    ]
+                    await res.respond(type=InteractionType.UpdateMessage, embed=embed, components=[buttons])
+
     @commands.command(name='add', description='Adds custom emoji.')
-    async def add(self, ctx, name, emoji):
+    async def add(self, ctx, name: str, emoji: str):
         if ctx.message.webhook_id or ctx.author.bot:
             return await ctx.send(':x: Sorry, Webhooks and Bots can\'t add emojis to bot. 0_0')
         if not re.fullmatch(r'\w{2,32}', name, re.ASCII):

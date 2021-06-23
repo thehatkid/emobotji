@@ -31,7 +31,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Emoji',
-            value='`list`, `react`, `add`, `add-from-url`',
+            value='`list`, `search`, `react`, `add`, `add-from-url`',
             inline=False
         )
         await ctx.send(embed=embed)
@@ -122,6 +122,24 @@ class Help(commands.Cog):
         embed.add_field(
             name='Description',
             value='Adds custom emoji to bot from URL with Image.',
+            inline=False
+        )
+        await ctx.send(embed=embed)
+
+    @help.command()
+    async def search(self, ctx):
+        embed = discord.Embed(
+            title=':information_source: Command: Search Emoji',
+            colour=discord.Colour.blurple()
+        )
+        embed.add_field(
+            name='Usage',
+            value=f'`{self.prefix}search <name of emoji>`',
+            inline=False
+        )
+        embed.add_field(
+            name='Description',
+            value='Searchs emoji with that name or by keyword in name.',
             inline=False
         )
         await ctx.send(embed=embed)
