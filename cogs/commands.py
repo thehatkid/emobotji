@@ -1,4 +1,5 @@
 import asyncio
+from io import BytesIO
 import logging
 import time
 import re
@@ -32,9 +33,9 @@ class Commands(commands.Cog):
             await self.http.close()
         self.bot.loop.create_task(close_http_session())
 
-    @commands.command()
+    @commands.command(name='reload', description='Reloads extenstion/cog (requires OWNER_ID)')
     @commands.check(lambda ctx: ctx.author.id == int(environ.get('OWNER_ID')))
-    async def reload(self, ctx, which: str = 'all'):
+    async def cmd_reload(self, ctx, which: str = 'all'):
         if which == 'all':
             self.bot.reload_extension('cogs.events')
             self.bot.reload_extension('cogs.commands')
@@ -52,8 +53,8 @@ class Commands(commands.Cog):
             return await ctx.send('Which reload?\n`events`, `commands`, `help`, `emoji` or `all`.')
         return await ctx.send(':arrows_counterclockwise: Reloaded: `{}`'.format(which))
 
-    @commands.command()
-    async def ping(self, ctx):
+    @commands.command(name='ping', description='Pings bot.')
+    async def cmd_ping(self, ctx):
         uptime = time.time() - self.bot.start_time
         time_d = int(uptime) / (3600 * 24)
         time_h = int(uptime) / 3600 - int(time_d) * 24
@@ -82,8 +83,8 @@ class Commands(commands.Cog):
         )
         await ctx.send(embed=embed)
 
-    @commands.command()
-    async def list(self, ctx, page: int = 1):
+    @commands.command(name='list', description='Sends embed with emoji list.')
+    async def cmd_list(self, ctx, page: int = 1):
         count = await self.db.fetch_one('SELECT COUNT(*) FROM `emojis`')
         limit = 10
         total = ceil(count[0] / limit)
@@ -170,7 +171,7 @@ class Commands(commands.Cog):
                     await res.respond(type=InteractionType.UpdateMessage, embed=embed, components=[buttons])
 
     @commands.command(name='search', description='Searching emoji in database.')
-    async def search(self, ctx, name: str):
+    async def cmd_search(self, ctx, name: str):
         count = await self.db.fetch_one('SELECT COUNT(*) FROM `emojis` WHERE `name` LIKE :name', {'name': f'%{name}%'})
         page = 1
         limit = 10
@@ -253,8 +254,40 @@ class Commands(commands.Cog):
                     ]
                     await res.respond(type=InteractionType.UpdateMessage, embed=embed, components=[buttons])
 
+    @commands.command(name='info', description='Gets emoji info by name. Who created and when emoji was uploaded.')
+    async def cmd_info(self, ctx, name: str):
+        if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
+            return await ctx.send(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores.')
+        row = await self.db.fetch_one('SELECT `id`, `name`, `animated`, `author`, `created` FROM `emojis` WHERE `name` LIKE :name', {'name': name})
+        if row is None:
+            await ctx.send(f':x: Emoji `{name}` not exists in bot.')
+        else:
+            embed = discord.Embed(title=f':information_source: Emoji `{name}`', colour=discord.Colour.blurple())
+            embed.set_image(url='https://cdn.discordapp.com/emojis/{0}.{1}'.format(row[0], 'gif' if row[2] else 'png'))
+            embed.add_field(name='Uploaded by:', value=row[3], inline=False)
+            embed.add_field(name='Created at:', value='<t:{0}:f> ({1})'.format(int(row[4].timestamp()), 'UTC'), inline=False)
+            embed.add_field(name='Animated?', value='Yes' if row[2] else 'No', inline=False)
+            await ctx.send(embed=embed)
+
+    @commands.command(name='big', description='Posts image of emoji.')
+    async def cmd_big(self, ctx, name: str):
+        if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
+            return await ctx.send(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores.')
+        row = await self.db.fetch_one('SELECT `id`, `name`, `animated`, `author`, `created` FROM `emojis` WHERE `name` LIKE :name', {'name': name})
+        if row is None:
+            await ctx.send(f':x: Emoji `{name}` not exists in bot.')
+        else:
+            image_format = 'gif' if row[2] else 'png'
+            url = 'https://cdn.discordapp.com/emojis/{0}.{1}'.format(row[0], image_format)
+            async with self.http.get(url) as response:
+                image = BytesIO(await response.read())
+            await ctx.send(
+                content='<{0}:{1}:{2}>'.format('a' if row[2] else '', row[1], row[0]),
+                file=discord.File(fp=image, filename='{0}.{1}'.format(row[1], image_format))
+            )
+
     @commands.command(name='add', description='Adds custom emoji.')
-    async def add(self, ctx, name: str, emoji: str):
+    async def cmd_add(self, ctx, name: str, emoji: str):
         if ctx.message.webhook_id or ctx.author.bot:
             return await ctx.send(':x: Sorry, Webhooks and Bots can\'t add emojis to bot. 0_0')
         if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
@@ -304,7 +337,7 @@ class Commands(commands.Cog):
             await ctx.send(f':white_check_mark: Emoji {result} was added to bot.')
 
     @commands.command(name='add-from-url', description='Adds emoji from URL with Image.')
-    async def add_from_url(self, ctx, name: str, url: str):
+    async def cmd_addfromurl(self, ctx, name: str, url: str):
         if ctx.message.webhook_id or ctx.author.bot:
             return await ctx.send(':x: Sorry, Webhooks and Bots can\'t add emojis to bot. 0_0')
         if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
@@ -363,7 +396,7 @@ class Commands(commands.Cog):
             await ctx.send(f':white_check_mark: Emoji {result} was added to bot.')
 
     @commands.command(name='react', description='Reacts message with emoji.')
-    async def react(self, ctx, emoji: str, message_id: int):
+    async def cmd_react(self, ctx, emoji: str, message_id: int):
         try:
             msg = await ctx.fetch_message(message_id)
         except discord.errors.NotFound:
