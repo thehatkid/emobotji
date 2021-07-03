@@ -1,54 +1,28 @@
 import logging
-from math import ceil
 import sys
 import traceback
-import asyncio
-import discord
 from discord.ext import commands
-from discord_components import DiscordComponents
 
 
 log = logging.getLogger(__name__)
-
-
-async def bgTask_status(bot):
-    while True:
-        game = discord.Game('with emojis | prefix: e!')
-        await bot.change_presence(activity=game, status=discord.Status.online)
-        await asyncio.sleep(10)
-        game = discord.Game('with emojis | help: e!help')
-        await bot.change_presence(activity=game, status=discord.Status.online)
-        await asyncio.sleep(10)
 
 
 class Events(commands.Cog):
     """Events cog for Discord Bot."""
     def __init__(self, bot):
         self.bot = bot
-        self.db = bot.db
 
     @commands.Cog.listener()
     async def on_ready(self):
-        await self.db.connect()
-        self.bot.loop.create_task(bgTask_status(self.bot))
-        DiscordComponents(self.bot)
         log.info('Bot is ready as {}'.format(self.bot.user))
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
-        log.info(
-            'Bot has been invited to: [Name: {0}, ID: {1}]'.format(
-                guild.name, guild.id
-            )
-        )
+        log.info('Bot has been invited to: [Name: {0}, ID: {1}]'.format(guild.name, guild.id))
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
-        log.info(
-            'Bot has been kicked from: [Name: {0}, ID: {1}]'.format(
-                guild.name, guild.id
-            )
-        )
+        log.info('Bot has been kicked from: [Name: {0}, ID: {1}]'.format(guild.name, guild.id))
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
