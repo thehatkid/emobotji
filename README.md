@@ -1,7 +1,7 @@
 # Emobotji
 
-[![Programing Language Python](https://img.shields.io/badge/python-3.9.5-4B8BBE.svg)](https://www.python.org/)
-[![discord.py](https://img.shields.io/badge/discord.py-1.7.1-5865F2.svg)](https://pypi.org/project/discord.py/)
+[![Python 3.6 and higher](https://img.shields.io/badge/python->=3.6-4B8BBE.svg)](https://www.python.org/)
+[![discord.py](https://img.shields.io/badge/discord.py-1.7.3-5865F2.svg)](https://pypi.org/project/discord.py/)
 [![codefactor.io](https://www.codefactor.io/repository/github/thehatkid/emobotji/badge)](https://www.codefactor.io/repository/github/thehatkid/emobotji/)
 
 ---
