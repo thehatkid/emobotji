@@ -43,10 +43,7 @@ class Emoji(commands.Cog):
         reply = self.replies[after.id]
         if not emojis:
             return await self.replies.pop(after.id).delete()
-        elif emojis == reply.content:
-            return
-        else:
-            await reply.edit(content=emojis)
+        await reply.edit(content=emojis)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
@@ -102,16 +99,10 @@ class Emoji(commands.Cog):
             values={'name': name}
         )
         if row:
-            if nsfw == row[3] or row[3] == False:
-                return '<{0}:{1}:{2}>'.format(
-                    'a' if row[2] else '',
-                    row[1],
-                    row[0]
-                )
-            else:
+            if nsfw is False and row[3] == 1:
                 return ''
-        else:
-            return ''
+            return '<{0}:{1}:{2}>'.format('a' if row[2] else '', row[1], row[0])
+        return ''
 
 
 def setup(bot):
