@@ -1,5 +1,6 @@
 import logging
 import re
+from discord import DMChannel
 from discord.ext import commands
 
 
@@ -22,7 +23,11 @@ class Emoji(commands.Cog):
     async def on_message(self, message):
         if message.author.bot:
             return
-        emojis = await self.emojis(message.content)
+        if isinstance(message.channel, DMChannel):
+            is_nsfw = False
+        else:
+            is_nsfw = True if message.channel.is_nsfw() else False
+        emojis = await self.emojis(message.content, is_nsfw)
         if emojis:
             self.replies[message.id] = await message.channel.send(emojis)
 
@@ -30,7 +35,11 @@ class Emoji(commands.Cog):
     async def on_message_edit(self, _, after):
         if after.id not in self.replies:
             return
-        emojis = await self.emojis(after.content)
+        if isinstance(after.channel, DMChannel):
+            is_nsfw = False
+        else:
+            is_nsfw = True if after.channel.is_nsfw() else False
+        emojis = await self.emojis(after.content, is_nsfw)
         reply = self.replies[after.id]
         if not emojis:
             return await self.replies.pop(after.id).delete()
@@ -46,12 +55,13 @@ class Emoji(commands.Cog):
         except KeyError:
             pass
 
-    async def emojis(self, message: str):
+    async def emojis(self, message: str, is_nsfw: bool) -> str:
         """
         Returns string with emoji(s).
 
         Parameters:
             message (str): Message text for filtering emojis.
+            is_nsfw (bool): If False searchs SFW emojis, otherwise searchs SFW and NSFW emojis.
 
         Returns:
             String with emojis for message.
@@ -67,17 +77,18 @@ class Emoji(commands.Cog):
             return
         emojis = []
         for name in names:
-            emojis.append(await self.get_formatted(name))
+            emojis.append(await self.get_formatted(name, is_nsfw))
         if not emojis:
             return
         return ''.join(emojis)
 
-    async def get_formatted(self, name):
+    async def get_formatted(self, name: str, nsfw: bool) -> str:
         """
         Returns formatted emoji for Discord message.
 
         Parameters:
             name (str): Name of emoji to get and format it.
+            nsfw (bool): If True returns NSFW emoji, otherwise returns empty if emoji are NSFW.
 
         Returns:
             String of formatted emoji for message:
@@ -87,15 +98,18 @@ class Emoji(commands.Cog):
             If not found returns nothing (empty string)
         """
         row = await self.db.fetch_one(
-            'SELECT `id`, `name`, `animated` FROM `emojis` WHERE `name` LIKE :name',
+            'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE :name',
             values={'name': name}
         )
         if row:
-            return '<{0}:{1}:{2}>'.format(
-                'a' if row[2] else '',
-                row[1],
-                row[0]
-            )
+            if nsfw == row[3] or row[3] == False:
+                return '<{0}:{1}:{2}>'.format(
+                    'a' if row[2] else '',
+                    row[1],
+                    row[0]
+                )
+            else:
+                return ''
         else:
             return ''
 

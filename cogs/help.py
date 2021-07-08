@@ -30,7 +30,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Emoji Managment',
-            value='`add`, `add-from-url`',
+            value='`add`, `add-from-url`, `mark-nsfw`',
             inline=False
         )
         embed.set_footer(
@@ -105,6 +105,11 @@ class Help(commands.Cog):
             inline=False
         )
         embed.add_field(
+            name='Aliases',
+            value='`find`',
+            inline=False
+        )
+        embed.add_field(
             name='Description',
             value='Searchs emoji with that name or by keyword in name.',
             inline=False
@@ -155,7 +160,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value=f'`{self.prefix}add <name of emoji> <custom emoji>`',
+            value=f'`{self.prefix}add <name of emoji> <custom emoji> [<is_nsfw? (yes/no)>]`',
             inline=False
         )
         embed.add_field(
@@ -173,12 +178,35 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value=f'`{self.prefix}add-from-url <name of emoji> <url with image>`',
+            value=f'`{self.prefix}add-from-url <name of emoji> <url with image> [<is_nsfw? (yes/no)>]`',
             inline=False
         )
         embed.add_field(
             name='Description',
             value='Adds custom emoji to bot from URL with Image.',
+            inline=False
+        )
+        await ctx.send(embed=embed)
+
+    @help.command(name='mark-nsfw')
+    async def help_marknsfw(self, ctx):
+        embed = discord.Embed(
+            title=':information_source: Command: Mark Emoji as NSFW',
+            colour=discord.Colour.blurple()
+        )
+        embed.add_field(
+            name='Usage',
+            value=f'`{self.prefix}mark-nsfw <name of your emoji>`',
+            inline=False
+        )
+        embed.add_field(
+            name='Aliases',
+            value='`nsfw`, `is-nsfw`, `toggle-nsfw`',
+            inline=False
+        )
+        embed.add_field(
+            name='Description',
+            value='Marks your uploaded emoji as NSFW, unmarks if already been NSFW marked.',
             inline=False
         )
         await ctx.send(embed=embed)

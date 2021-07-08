@@ -85,7 +85,15 @@ class Commands(commands.Cog):
 
     @commands.command(name='list', description='Sends embed with emoji list.')
     async def cmd_list(self, ctx, page: int = 1):
-        count = await self.db.fetch_one('SELECT COUNT(*) FROM `emojis`')
+        if isinstance(ctx.channel, discord.DMChannel):
+            nsfw = False
+        else:
+            nsfw = True if ctx.channel.is_nsfw() else False
+        if nsfw:
+            count = await self.db.fetch_one('SELECT COUNT(*) FROM `emojis`')
+        else:
+            count = await self.db.fetch_one('SELECT COUNT(*) FROM `emojis` WHERE `nsfw` = 0')
+
         limit = 10
         total = ceil(count[0] / limit)
 
@@ -94,20 +102,30 @@ class Commands(commands.Cog):
 
         offset = (limit * page) - limit
 
-        rows = await self.db.fetch_all(
-            'SELECT `id`, `name`, `animated` FROM `emojis` ORDER BY `name` ASC LIMIT :limit OFFSET :offset',
-            {'limit': limit, 'offset': offset}
-        )
+        if nsfw:
+            rows = await self.db.fetch_all(
+                'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` ORDER BY `name` ASC LIMIT :limit OFFSET :offset',
+                {'limit': limit, 'offset': offset}
+            )
+        else:
+            rows = await self.db.fetch_all(
+                'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `nsfw` = 0 ORDER BY `name` ASC LIMIT :limit OFFSET :offset',
+                {'limit': limit, 'offset': offset}
+            )
 
         embed = discord.Embed(title='Bot\'s Emoji List', colour=discord.Colour.blurple())
         embed.set_footer(text='Page: {0} of {1}'.format(page, total))
         desc = ''
 
         for emoji in rows:
-            if emoji[2]:
-                desc += '<a:{0}:{1}> [\:{0}\:](https://cdn.discordapp.com/emojis/{1}.gif)\n'.format(emoji[1], emoji[0])
-            else:
-                desc += '<:{0}:{1}> [\:{0}\:](https://cdn.discordapp.com/emojis/{1}.png)\n'.format(emoji[1], emoji[0])
+            desc += '<{2}:{1}:{0}> [\:{1}\:](https://cdn.discordapp.com/emojis/{0}.{3}){4}\n'.format(
+                emoji[0],
+                emoji[1],
+                'a' if emoji[2] else '',
+                'gif' if emoji[2] else 'png',
+                ' *(NSFW)*' if emoji[3] else ''
+            )
+
         if not desc:
             desc = 'Empty...'
         embed.description = desc
@@ -117,7 +135,7 @@ class Commands(commands.Cog):
             Button(id='list_page:{}'.format(page + 1), emoji=u'\U000025B6', style=ButtonStyle.grey, disabled=True if page >= total else False),
             Button(id='list_close', emoji=u'\U00002716', style=ButtonStyle.red)
         ]
-        msg = await ctx.send(embed=embed, components=[buttons])
+        msg = await ctx.send(content=f'NSFW: {nsfw}', embed=embed, components=[buttons])
 
         def check(res):
             return res.message.id == msg.id and res.user.id == ctx.author.id and res.channel.id == ctx.channel.id
@@ -136,7 +154,12 @@ class Commands(commands.Cog):
                     break
                 elif res.component.id.startswith('list_page:'):
                     page = int(res.component.id.split(':')[1])
-                    count = await self.db.fetch_one('SELECT COUNT(*) FROM `emojis`')
+
+                    if nsfw:
+                        count = await self.db.fetch_one('SELECT COUNT(*) FROM `emojis`')
+                    else:
+                        count = await self.db.fetch_one('SELECT COUNT(*) FROM `emojis` WHERE `nsfw` = 0')
+
                     limit = 10
                     total = ceil(count[0] / limit)
 
@@ -145,20 +168,30 @@ class Commands(commands.Cog):
 
                     offset = (limit * page) - limit
 
-                    rows = await self.db.fetch_all(
-                        'SELECT `id`, `name`, `animated` FROM `emojis` ORDER BY `name` ASC LIMIT :limit OFFSET :offset',
-                        {'limit': limit, 'offset': offset}
-                    )
+                    if nsfw:
+                        rows = await self.db.fetch_all(
+                            'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` ORDER BY `name` ASC LIMIT :limit OFFSET :offset',
+                            {'limit': limit, 'offset': offset}
+                        )
+                    else:
+                        rows = await self.db.fetch_all(
+                            'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `nsfw` = 0 ORDER BY `name` ASC LIMIT :limit OFFSET :offset',
+                            {'limit': limit, 'offset': offset}
+                        )
 
                     embed = discord.Embed(title='Bot\'s Emoji List', colour=discord.Colour.blurple())
                     embed.set_footer(text='Page: {0} of {1}'.format(page, total))
                     desc = ''
 
                     for emoji in rows:
-                        if emoji[2]:
-                            desc += '<a:{0}:{1}> [\:{0}\:](https://cdn.discordapp.com/emojis/{1}.gif)\n'.format(emoji[1], emoji[0])
-                        else:
-                            desc += '<:{0}:{1}> [\:{0}\:](https://cdn.discordapp.com/emojis/{1}.png)\n'.format(emoji[1], emoji[0])
+                        desc += '<{2}:{1}:{0}> [\:{1}\:](https://cdn.discordapp.com/emojis/{0}.{3}){4}\n'.format(
+                            emoji[0],
+                            emoji[1],
+                            'a' if emoji[2] else '',
+                            'gif' if emoji[2] else 'png',
+                            ' *(NSFW)*' if emoji[3] else ''
+                        )
+
                     if not desc:
                         desc = 'Empty...'
                     embed.description = desc
@@ -168,30 +201,48 @@ class Commands(commands.Cog):
                         Button(id='list_page:{}'.format(page + 1), emoji=u'\U000025B6', style=ButtonStyle.grey, disabled=True if page >= total else False),
                         Button(id='list_close', emoji=u'\U00002716', style=ButtonStyle.red)
                     ]
-                    await res.respond(type=InteractionType.UpdateMessage, embed=embed, components=[buttons])
+                    await res.respond(type=InteractionType.UpdateMessage, content=f'NSFW is {nsfw}', embed=embed, components=[buttons])
 
-    @commands.command(name='search', description='Searching emoji in database.')
+    @commands.command(name='search', description='Searching emoji in database.', aliases=['find'])
     async def cmd_search(self, ctx, name: str):
-        count = await self.db.fetch_one('SELECT COUNT(*) FROM `emojis` WHERE `name` LIKE :name', {'name': f'%{name}%'})
+        if isinstance(ctx.channel, discord.DMChannel):
+            nsfw = False
+        else:
+            nsfw = True if ctx.channel.is_nsfw() else False
+        if nsfw:
+            count = await self.db.fetch_one('SELECT COUNT(*) FROM `emojis` WHERE `name` LIKE :name', {'name': f'%{name}%'})
+        else:
+            count = await self.db.fetch_one('SELECT COUNT(*) FROM `emojis` WHERE `name` LIKE :name AND `nsfw` = 0', {'name': f'%{name}%'})
+
         page = 1
         limit = 10
         total = ceil(count[0] / limit)
         offset = (limit * page) - limit
 
-        rows = await self.db.fetch_all(
-            'SELECT `id`, `name`, `animated` FROM `emojis` WHERE `name` LIKE :name ORDER BY `name` ASC LIMIT :limit OFFSET :offset',
-            {'name': f'%{name}%', 'limit': limit, 'offset': offset}
-        )
+        if nsfw:
+            rows = await self.db.fetch_all(
+                'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE :name ORDER BY `name` ASC LIMIT :limit OFFSET :offset',
+                {'name': f'%{name}%', 'limit': limit, 'offset': offset}
+            )
+        else:
+            rows = await self.db.fetch_all(
+                'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE :name AND `nsfw` = 0 ORDER BY `name` ASC LIMIT :limit OFFSET :offset',
+                {'name': f'%{name}%', 'limit': limit, 'offset': offset}
+            )
 
         embed = discord.Embed(title=f'Searching: `{name}`', colour=discord.Colour.blurple())
         embed.set_footer(text='Page: {0} of {1}'.format(page, total))
         desc = ''
 
         for emoji in rows:
-            if emoji[2]:
-                desc += '<a:{0}:{1}> [\:{0}\:](https://cdn.discordapp.com/emojis/{1}.gif)\n'.format(emoji[1], emoji[0])
-            else:
-                desc += '<:{0}:{1}> [\:{0}\:](https://cdn.discordapp.com/emojis/{1}.png)\n'.format(emoji[1], emoji[0])
+            desc += '<{2}:{1}:{0}> [\:{1}\:](https://cdn.discordapp.com/emojis/{0}.{3}){4}\n'.format(
+                emoji[0],
+                emoji[1],
+                'a' if emoji[2] else '',
+                'gif' if emoji[2] else 'png',
+                ' *(NSFW)*' if emoji[3] else ''
+            )
+
         if not desc:
             desc = 'Empty...'
         embed.description = desc
@@ -220,7 +271,12 @@ class Commands(commands.Cog):
                     break
                 elif res.component.id.startswith('list_page:'):
                     page = int(res.component.id.split(':')[1])
-                    count = await self.db.fetch_one('SELECT COUNT(*) FROM `emojis` WHERE `name` LIKE :name', {'name': f'%{name}%'})
+
+                    if nsfw:
+                        count = await self.db.fetch_one('SELECT COUNT(*) FROM `emojis` WHERE `name` LIKE :name', {'name': f'%{name}%'})
+                    else:
+                        count = await self.db.fetch_one('SELECT COUNT(*) FROM `emojis` WHERE `name` LIKE :name AND `nsfw` = 0', {'name': f'%{name}%'})
+
                     limit = 10
                     total = ceil(count[0] / limit)
 
@@ -229,20 +285,30 @@ class Commands(commands.Cog):
 
                     offset = (limit * page) - limit
 
-                    rows = await self.db.fetch_all(
-                        'SELECT `id`, `name`, `animated` FROM `emojis` WHERE `name` LIKE :name ORDER BY `name` ASC LIMIT :limit OFFSET :offset',
-                        {'name': f'%{name}%', 'limit': limit, 'offset': offset}
-                    )
+                    if nsfw:
+                        rows = await self.db.fetch_all(
+                            'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE :name ORDER BY `name` ASC LIMIT :limit OFFSET :offset',
+                            {'name': f'%{name}%', 'limit': limit, 'offset': offset}
+                        )
+                    else:
+                        rows = await self.db.fetch_all(
+                            'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE :name AND `nsfw` = 0 ORDER BY `name` ASC LIMIT :limit OFFSET :offset',
+                            {'name': f'%{name}%', 'limit': limit, 'offset': offset}
+                        )
 
                     embed = discord.Embed(title=f'Searching: `{name}`', colour=discord.Colour.blurple())
                     embed.set_footer(text='Page: {0} of {1}'.format(page, total))
                     desc = ''
 
                     for emoji in rows:
-                        if emoji[2]:
-                            desc += '<a:{0}:{1}> [\:{0}\:](https://cdn.discordapp.com/emojis/{1}.gif)\n'.format(emoji[1], emoji[0])
-                        else:
-                            desc += '<:{0}:{1}> [\:{0}\:](https://cdn.discordapp.com/emojis/{1}.png)\n'.format(emoji[1], emoji[0])
+                        desc += '<{2}:{1}:{0}> [\:{1}\:](https://cdn.discordapp.com/emojis/{0}.{3}){4}\n'.format(
+                            emoji[0],
+                            emoji[1],
+                            'a' if emoji[2] else '',
+                            'gif' if emoji[2] else 'png',
+                            ' *(NSFW)*' if emoji[3] else ''
+                        )
+
                     if not desc:
                         desc = 'Empty...'
                     embed.description = desc
@@ -254,46 +320,67 @@ class Commands(commands.Cog):
                     ]
                     await res.respond(type=InteractionType.UpdateMessage, embed=embed, components=[buttons])
 
-    @commands.command(name='info', description='Gets emoji info by name. Who created and when emoji was uploaded.')
+    @commands.command(name='info', description='Gets emoji info by name. Who created, when emoji was uploaded, etc.')
     async def cmd_info(self, ctx, name: str):
+        if isinstance(ctx.channel, discord.DMChannel):
+            is_nsfw = False
+        else:
+            is_nsfw = True if ctx.channel.is_nsfw() else False
         if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
             return await ctx.send(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores.')
-        row = await self.db.fetch_one('SELECT `id`, `name`, `animated`, `author`, `created` FROM `emojis` WHERE `name` LIKE :name', {'name': name})
+        row = await self.db.fetch_one('SELECT `id`, `name`, `animated`, `nsfw`, `author_id`, `created` FROM `emojis` WHERE `name` LIKE :name', {'name': name})
         if row is None:
             await ctx.send(f':x: Emoji `{name}` not exists in bot.')
         else:
             embed = discord.Embed(title=f':information_source: Emoji `{name}`', colour=discord.Colour.blurple())
-            embed.set_image(url='https://cdn.discordapp.com/emojis/{0}.{1}'.format(row[0], 'gif' if row[2] else 'png'))
-            embed.add_field(name='Uploaded by:', value=row[3], inline=False)
-            embed.add_field(name='Created at:', value='<t:{0}:f> ({1})'.format(int(row[4].timestamp()), 'UTC'), inline=False)
+
+            if not is_nsfw and row[3]:
+                embed.description = '*Preview of Emoji are unavailable because that\'s NSFW.*'
+            else:
+                embed.set_image(url='https://cdn.discordapp.com/emojis/{0}.{1}'.format(row[0], 'gif' if row[2] else 'png'))
+
+            embed.add_field(name='Uploaded by:', value=row[4], inline=False)
+            embed.add_field(name='Created at:', value='<t:{0}:f> ({1})'.format(int(row[5].timestamp()), 'UTC'), inline=False)
             embed.add_field(name='Animated?', value='Yes' if row[2] else 'No', inline=False)
+            embed.add_field(name='NSFW?', value='Yes' if row[3] else 'No', inline=False)
             await ctx.send(embed=embed)
 
     @commands.command(name='big', description='Posts image of emoji.')
     async def cmd_big(self, ctx, name: str):
+        if isinstance(ctx.channel, discord.DMChannel):
+            is_nsfw = False
+        else:
+            is_nsfw = True if ctx.channel.is_nsfw() else False
         if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
             return await ctx.send(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores.')
-        row = await self.db.fetch_one('SELECT `id`, `name`, `animated`, `author`, `created` FROM `emojis` WHERE `name` LIKE :name', {'name': name})
+        row = await self.db.fetch_one('SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE :name', {'name': name})
         if row is None:
             await ctx.send(f':x: Emoji `{name}` not exists in bot.')
         else:
-            image_format = 'gif' if row[2] else 'png'
-            url = 'https://cdn.discordapp.com/emojis/{0}.{1}'.format(row[0], image_format)
-            async with self.http.get(url) as response:
-                image = BytesIO(await response.read())
-            await ctx.send(
-                content='<{0}:{1}:{2}>'.format('a' if row[2] else '', row[1], row[0]),
-                file=discord.File(fp=image, filename='{0}.{1}'.format(row[1], image_format))
-            )
+            if not is_nsfw and row[3]:
+                await ctx.send(':x: Emoji are unavailable for posting here because that\'s NSFW.*')
+            else:
+                image_format = 'gif' if row[2] else 'png'
+                url = 'https://cdn.discordapp.com/emojis/{0}.{1}'.format(row[0], image_format)
+                async with self.http.get(url) as response:
+                    image = BytesIO(await response.read())
+                await ctx.send(
+                    content='<{0}:{1}:{2}>'.format('a' if row[2] else '', row[1], row[0]),
+                    file=discord.File(fp=image, filename='{0}.{1}'.format(row[1], image_format))
+                )
 
     @commands.command(name='add', description='Adds custom emoji.')
-    async def cmd_add(self, ctx, name: str, emoji: str):
+    async def cmd_add(self, ctx, name: str, emoji: str, is_nsfw: str = '0'):
         if ctx.message.webhook_id or ctx.author.bot:
             return await ctx.send(':x: Sorry, Webhooks and Bots can\'t add emojis to bot. 0_0')
         if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
             return await ctx.send(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores.')
         if await self.db.fetch_one('SELECT `name` FROM `emojis` WHERE `name` LIKE :name', {'name': name}):
             return await ctx.send(f':x: `{name}` is already taken, try other name.')
+        if is_nsfw in ['is-nsfw', 'is_nsfw', 'isnsfw', 'nsfw', '1', 'yes', 'y', 'true', '18+']:
+            is_nsfw = True
+        else:
+            is_nsfw = False
 
         match = self.regex.match(emoji)
         if match is None:
@@ -308,9 +395,9 @@ class Commands(commands.Cog):
             image = await response.read()
 
         if animated:
-            guild = await self.db.fetch_one('SELECT `id` FROM `guilds` WHERE `animated_usage` < 50 ORDER BY `created` LIMIT 1')
+            guild = await self.db.fetch_one('SELECT `guild_id` FROM `guilds` WHERE `usage_animated` < 50 ORDER BY `number` ASC LIMIT 1')
         else:
-            guild = await self.db.fetch_one('SELECT `id` FROM `guilds` WHERE `static_usage` < 50 ORDER BY `created` LIMIT 1')
+            guild = await self.db.fetch_one('SELECT `guild_id` FROM `guilds` WHERE `usage_static` < 50 ORDER BY `number` ASC LIMIT 1')
         if guild is None:
             return await ctx.send(':x: Emoji was not uploaded: `NO_AVAILABLE_GUILDS`')
         guild = self.bot.get_guild(guild[0])
@@ -327,23 +414,30 @@ class Commands(commands.Cog):
                 return await ctx.send(f':x: Emoji was not added to bot.\n`{e}`')
         else:
             await self.db.execute(
-                'INSERT INTO `emojis` (`id`, `name`, `animated`, `author`, `guild`) VALUES (:id, :name, :animated, :author, :guild)',
-                {'id': result.id, 'name': result.name, 'animated': result.animated, 'author': author, 'guild': guild.id}
+                'INSERT INTO `emojis` (`id`, `name`, `animated`, `nsfw`, `author_id`, `guild_id`) VALUES (:id, :name, :animated, :nsfw, :author_id, :guild_id)',
+                {'id': result.id, 'name': result.name, 'animated': result.animated, 'nsfw': is_nsfw, 'author_id': author, 'guild_id': guild.id}
             )
             if animated:
-                await self.db.execute('UPDATE `guilds` SET `animated_usage` = `animated_usage` + 1 WHERE `id` = :guild', {'guild': guild.id})
+                await self.db.execute('UPDATE `guilds` SET `usage_animated` = `usage_animated` + 1 WHERE `guild_id` = :guild_id', {'guild_id': guild.id})
             else:
-                await self.db.execute('UPDATE `guilds` SET `static_usage` = `static_usage` + 1 WHERE `id` = :guild', {'guild': guild.id})
-            await ctx.send(f':white_check_mark: Emoji {result} was added to bot.')
+                await self.db.execute('UPDATE `guilds` SET `usage_static` = `usage_static` + 1 WHERE `guild_id` = :guild_id', {'guild_id': guild.id})
+            if is_nsfw:
+                await ctx.send(f':white_check_mark: Emoji {result} was added to bot and **marked as NSFW** only usage.')
+            else:
+                await ctx.send(f':white_check_mark: Emoji {result} was added to bot.')
 
     @commands.command(name='add-from-url', description='Adds emoji from URL with Image.')
-    async def cmd_addfromurl(self, ctx, name: str, url: str):
+    async def cmd_addfromurl(self, ctx, name: str, url: str, is_nsfw: str = '0'):
         if ctx.message.webhook_id or ctx.author.bot:
             return await ctx.send(':x: Sorry, Webhooks and Bots can\'t add emojis to bot. 0_0')
         if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
             return await ctx.send(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores.')
         if await self.db.fetch_one('SELECT `name` FROM `emojis` WHERE `name` LIKE :name', {'name': name}):
             return await ctx.send(f':x: `{name}` is already taken, try other name.')
+        if is_nsfw in ['is-nsfw', 'is_nsfw', 'isnsfw', 'nsfw', '1', 'yes', 'y', 'true', '18+']:
+            is_nsfw = True
+        else:
+            is_nsfw = False
 
         author = ctx.author.id
 
@@ -365,9 +459,9 @@ class Commands(commands.Cog):
             return await ctx.send(f':x: Exception while downloading image from URL.\n`{e}`')
 
         if animated:
-            guild = await self.db.fetch_one('SELECT `id` FROM `guilds` WHERE `animated_usage` < 50 ORDER BY `created` LIMIT 1')
+            guild = await self.db.fetch_one('SELECT `guild_id` FROM `guilds` WHERE `usage_animated` < 50 ORDER BY `number` LIMIT 1')
         else:
-            guild = await self.db.fetch_one('SELECT `id` FROM `guilds` WHERE `static_usage` < 50 ORDER BY `created` LIMIT 1')
+            guild = await self.db.fetch_one('SELECT `guild_id` FROM `guilds` WHERE `usage_static` < 50 ORDER BY `number` LIMIT 1')
         if guild is None:
             return await ctx.send(':x: Emoji was not uploaded: `NO_AVAILABLE_GUILDS`')
         guild = self.bot.get_guild(guild[0])
@@ -386,14 +480,36 @@ class Commands(commands.Cog):
                 return
         else:
             await self.db.execute(
-                'INSERT INTO `emojis` (`id`, `name`, `animated`, `author`, `guild`) VALUES (:id, :name, :animated, :author, :guild)',
-                {'id': result.id, 'name': result.name, 'animated': result.animated, 'author': author, 'guild': guild.id}
+                'INSERT INTO `emojis` (`id`, `name`, `animated`, `nsfw`, `author_id`, `guild_id`) VALUES (:id, :name, :animated, :nsfw, :author_id, :guild_id)',
+                {'id': result.id, 'name': result.name, 'animated': result.animated, 'nsfw': is_nsfw, 'author_id': author, 'guild_id': guild.id}
             )
             if animated:
-                await self.db.execute('UPDATE `guilds` SET `animated_usage` = `animated_usage` + 1 WHERE `id` = :guild', {'guild': guild.id})
+                await self.db.execute('UPDATE `guilds` SET `usage_animated` = `usage_animated` + 1 WHERE `guild_id` = :guild_id', {'guild_id': guild.id})
             else:
-                await self.db.execute('UPDATE `guilds` SET `static_usage` = `static_usage` + 1 WHERE `id` = :guild', {'guild': guild.id})
-            await ctx.send(f':white_check_mark: Emoji {result} was added to bot.')
+                await self.db.execute('UPDATE `guilds` SET `usage_static` = `usage_static` + 1 WHERE `guild_id` = :guild_id', {'guild_id': guild.id})
+            if is_nsfw:
+                await ctx.send(f':white_check_mark: Emoji {result} was added to bot and **marked as NSFW** only usage.')
+            else:
+                await ctx.send(f':white_check_mark: Emoji {result} was added to bot.')
+
+    @commands.command(name='mark-nsfw', description='Marks emoji as NSFW usage only, also unmarks if was marked.', aliases=['nsfw', 'is-nsfw', 'toggle-nsfw'])
+    async def cmd_marknsfw(self, ctx, name: str):
+        if ctx.message.webhook_id or ctx.author.bot:
+            return await ctx.send(':x: Sorry, Webhooks and Bots can\'t mark emojis. 0_0')
+
+        row = await self.db.fetch_one('SELECT `id`, `nsfw`, `author_id` FROM `emojis` WHERE `name` LIKE :name', {'name': name})
+        if row is None:
+            await ctx.send(f':x: Emoji `{name}` not exists in bot.')
+        else:
+            if row[2] == environ.get('OWNER_ID') or row[2] == ctx.author.id:
+                if row[1]:
+                    await self.db.execute('UPDATE `emojis` SET `nsfw` = 0 WHERE `id` = :id', {'id': row[0]})
+                    await ctx.send(f':white_check_mark: Emoji `{name}` was **unmarked** as NSFW.')
+                else:
+                    await self.db.execute('UPDATE `emojis` SET `nsfw` = 1 WHERE `id` = :id', {'id': row[0]})
+                    await ctx.send(f':white_check_mark: Emoji `{name}` was **marked** as NSFW.')
+            else:
+                await ctx.send(':x: Sorry, You can\'t mark other\'s emoji.')
 
     @commands.command(name='react', description='Reacts message with emoji.')
     async def cmd_react(self, ctx, emoji: str, message_id: int):
@@ -402,11 +518,14 @@ class Commands(commands.Cog):
         except discord.errors.NotFound:
             return await ctx.send(':x: Message not found or not from this channel.')
         else:
-            row = await self.db.fetch_one('SELECT `id` FROM `emojis` WHERE `name` LIKE :name', {'name': emoji})
+            row = await self.db.fetch_one('SELECT `id`, `nsfw` FROM `emojis` WHERE `name` LIKE :name', {'name': emoji})
             if row is None:
                 return await ctx.send(f':x: Emoji with name `{emoji}` not found in bot.')
             else:
-                await msg.add_reaction(self.bot.get_emoji(row[0]))
+                if row[2]:
+                    await ctx.send(':x: You can\'t react message because your selected emoji was marked as **NSFW only**.')
+                else:
+                    await msg.add_reaction(self.bot.get_emoji(row[0]))
 
 
 def setup(bot):
