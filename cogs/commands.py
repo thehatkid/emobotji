@@ -385,12 +385,10 @@ class Commands(commands.Cog):
         match = self.regex.match(emoji)
         if match is None:
             return await ctx.send(':x: That\'s not an emoji.')
-        else:
-            animated, emoji_id = match.groups()
-            format = 'gif' if animated else 'png'
+        animated, emoji_id = match.groups()
         author = ctx.author.id
 
-        url = 'https://cdn.discordapp.com/emojis/{0}.{1}'.format(emoji_id, format)
+        url = 'https://cdn.discordapp.com/emojis/{0}.{1}'.format(emoji_id, 'gif' if animated else 'png')
         async with self.http.get(url) as response:
             image = await response.read()
 
@@ -409,9 +407,8 @@ class Commands(commands.Cog):
             )
         except discord.errors.HTTPException as e:
             if e.status == 429:
-                return await ctx.send(f':x: Bot have rate limited.\n`{e}`')
-            else:
-                return await ctx.send(f':x: Emoji was not added to bot.\n`{e}`')
+                await ctx.send(f':x: Bot have rate limited.\n`{e}`')
+            await ctx.send(f':x: Emoji was not added to bot.\n`{e}`')
         else:
             await self.db.execute(
                 'INSERT INTO `emojis` (`id`, `name`, `animated`, `nsfw`, `author_id`, `guild_id`) VALUES (:id, :name, :animated, :nsfw, :author_id, :guild_id)',
@@ -446,9 +443,8 @@ class Commands(commands.Cog):
                 if response.status == 200:
                     if response.headers['content-type'] not in {'image/png', 'image/jpeg', 'image/gif'}:
                         return await ctx.send(':x: Requested URL is not an **image**.')
-                    else:
-                        animated = True if response.headers['content-type'] == 'image/gif' else False
-                        image = await response.read()
+                    animated = True if response.headers['content-type'] == 'image/gif' else False
+                    image = await response.read()
                 else:
                     return await ctx.send(f':x: Got error while downloading image from URL. Status: `{response.status}`')
         except asyncio.exceptions.TimeoutError:
@@ -473,11 +469,8 @@ class Commands(commands.Cog):
             )
         except discord.errors.HTTPException as e:
             if e.status == 429:
-                await ctx.send(f':x: Bot have rate limited.\n`{e}`')
-                return
-            else:
-                await ctx.send(f':x: Emoji was not added to bot.\n`{e}`')
-                return
+                return await ctx.send(f':x: Bot have rate limited.\n`{e}`')
+            await ctx.send(f':x: Emoji was not added to bot.\n`{e}`')
         else:
             await self.db.execute(
                 'INSERT INTO `emojis` (`id`, `name`, `animated`, `nsfw`, `author_id`, `guild_id`) VALUES (:id, :name, :animated, :nsfw, :author_id, :guild_id)',
@@ -516,11 +509,11 @@ class Commands(commands.Cog):
         try:
             msg = await ctx.fetch_message(message_id)
         except discord.errors.NotFound:
-            return await ctx.send(':x: Message not found or not from this channel.')
+            await ctx.send(':x: Message not found or not from this channel.')
         else:
             row = await self.db.fetch_one('SELECT `id`, `nsfw` FROM `emojis` WHERE `name` LIKE :name', {'name': emoji})
             if row is None:
-                return await ctx.send(f':x: Emoji with name `{emoji}` not found in bot.')
+                await ctx.send(f':x: Emoji with name `{emoji}` not found in bot.')
             else:
                 if row[2]:
                     await ctx.send(':x: You can\'t react message because your selected emoji was marked as **NSFW only**.')
