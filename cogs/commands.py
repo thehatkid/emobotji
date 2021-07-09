@@ -135,7 +135,7 @@ class Commands(commands.Cog):
             Button(id='list_page:{}'.format(page + 1), emoji=u'\U000025B6', style=ButtonStyle.grey, disabled=True if page >= total else False),
             Button(id='list_close', emoji=u'\U00002716', style=ButtonStyle.red)
         ]
-        msg = await ctx.send(content=f'NSFW: {nsfw}', embed=embed, components=[buttons])
+        msg = await ctx.send(embed=embed, components=[buttons])
 
         def check(res):
             return res.message.id == msg.id and res.user.id == ctx.author.id and res.channel.id == ctx.channel.id
@@ -201,7 +201,7 @@ class Commands(commands.Cog):
                         Button(id='list_page:{}'.format(page + 1), emoji=u'\U000025B6', style=ButtonStyle.grey, disabled=True if page >= total else False),
                         Button(id='list_close', emoji=u'\U00002716', style=ButtonStyle.red)
                     ]
-                    await res.respond(type=InteractionType.UpdateMessage, content=f'NSFW is {nsfw}', embed=embed, components=[buttons])
+                    await res.respond(type=InteractionType.UpdateMessage, embed=embed, components=[buttons])
 
     @commands.command(name='search', description='Searching emoji in database.', aliases=['find'])
     async def cmd_search(self, ctx, name: str):
@@ -358,7 +358,7 @@ class Commands(commands.Cog):
             await ctx.send(f':x: Emoji `{name}` not exists in bot.')
         else:
             if not is_nsfw and row[3]:
-                await ctx.send(':x: Emoji are unavailable for posting here because that\'s NSFW.*')
+                await ctx.send(':x: Emoji are unavailable for posting here because that\'s **NSFW**.')
             else:
                 image_format = 'gif' if row[2] else 'png'
                 url = 'https://cdn.discordapp.com/emojis/{0}.{1}'.format(row[0], image_format)
