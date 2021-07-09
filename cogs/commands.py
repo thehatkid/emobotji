@@ -339,7 +339,7 @@ class Commands(commands.Cog):
             else:
                 embed.set_image(url='https://cdn.discordapp.com/emojis/{0}.{1}'.format(row[0], 'gif' if row[2] else 'png'))
 
-            embed.add_field(name='Uploaded by:', value=row[4], inline=False)
+            embed.add_field(name='Uploaded by:', value='{0}{1}'.format(row[4], ' *(is you!)*' if int(row[4]) == ctx.author.id else ''), inline=False)
             embed.add_field(name='Created at:', value='<t:{0}:f> ({1})'.format(int(row[5].timestamp()), 'UTC'), inline=False)
             embed.add_field(name='Animated?', value='Yes' if row[2] else 'No', inline=False)
             embed.add_field(name='NSFW?', value='Yes' if row[3] else 'No', inline=False)
@@ -494,7 +494,7 @@ class Commands(commands.Cog):
         if row is None:
             await ctx.send(f':x: Emoji `{name}` not exists in bot.')
         else:
-            if row[2] == environ.get('OWNER_ID') or row[2] == ctx.author.id:
+            if ctx.author.id == int(environ.get('OWNER_ID')) or int(row[2]) == ctx.author.id:
                 if row[1]:
                     await self.db.execute('UPDATE `emojis` SET `nsfw` = 0 WHERE `id` = :id', {'id': row[0]})
                     await ctx.send(f':white_check_mark: Emoji `{name}` was **unmarked** as NSFW.')
