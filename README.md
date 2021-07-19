@@ -2,6 +2,8 @@
 [![Python 3.6 and higher](https://img.shields.io/badge/python->=3.6-4B8BBE.svg)](https://www.python.org/)
 [![discord.py](https://img.shields.io/badge/discord.py-1.7.3-5865F2.svg)](https://pypi.org/project/discord.py/)
 [![codefactor.io](https://www.codefactor.io/repository/github/thehatkid/emobotji/badge)](https://www.codefactor.io/repository/github/thehatkid/emobotji/)
+[![hat_kid's Server](https://img.shields.io/discord/848266125833273384.svg?logo=discord&colorB=5865F2&label=hat_kid%27s%20Server)](https://discord.gg/Y7EtGn6bH3)
+[![Emobotji on top.gg](https://top.gg/api/widget/servers/841879090038177792.svg)](https://top.gg/bot/841879090038177792)
 
 A **Text-to-Emoji** Bot for Discord. :yeah:
 
