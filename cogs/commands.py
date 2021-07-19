@@ -515,7 +515,7 @@ class Commands(commands.Cog):
             if row is None:
                 await ctx.send(f':x: Emoji with name `{emoji}` not found in bot.')
             else:
-                if row[2]:
+                if row[1]:
                     await ctx.send(':x: You can\'t react message because your selected emoji was marked as **NSFW only**.')
                 else:
                     await msg.add_reaction(self.bot.get_emoji(row[0]))

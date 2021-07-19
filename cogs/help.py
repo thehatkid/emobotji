@@ -65,7 +65,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value=f'`{self.prefix}list <name of emoji> <message id from this channel>`',
+            value=f'`{self.prefix}react <name of emoji> <message id from this channel>`',
             inline=False
         )
         embed.add_field(
@@ -101,7 +101,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value=f'`{self.prefix}search <name of emoji>`',
+            value=f'`{self.prefix}search <name/word of emoji>`',
             inline=False
         )
         embed.add_field(
