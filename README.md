@@ -7,6 +7,16 @@
 
 A **Text-to-Emoji** Bot for Discord. :yeah:
 
+---
+
+## :warning: Warning:
+
+This **branch** will be a while deprecated at this moment because all commits going to branch **[emobotji@discord.py-2.0.0a](https://github.com/thehatkid/emobotji/tree/discord.py-2.0.0a)**.
+
+Also [discord.py 2.0.0a](https://github.com/Rapptz/discord.py/tree/master) supports with **[Discord Threads](https://blog.discord.com/connect-the-conversation-with-threads-on-discord-3f5fa8b0f6b)**.
+
+---
+
 This Bot same as [Emote Collector](https://github.com/EmoteBot/EmoteCollector) but Emobotji have rewrited and simplified code. *(almost from scratch!)*
 
 Emobotji lets you use emotes you don't have by using "text-to-emoji" (`:name_of_emoji:`) even without Nitro.
