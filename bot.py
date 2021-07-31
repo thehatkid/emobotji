@@ -39,6 +39,7 @@ log.info('Starting discord.py {0} {1}...'.format(
 
 # Initialize Bot Class
 intents = discord.Intents(
+    guilds=True,
     messages=True,
     guild_messages=True,
     dm_messages=True
