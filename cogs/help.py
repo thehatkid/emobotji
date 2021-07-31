@@ -12,15 +12,19 @@ class Help(commands.Cog):
         self.prefix = environ.get('BOT_PREFIX')
 
     @commands.group(invoke_without_command=True)
-    async def help(self, ctx):
+    async def help(self, ctx: commands.Context):
         embed = discord.Embed(
-            title=':information_source: Bot\'s Help List',
+            title=':information_source: Bot Help List',
             colour=discord.Colour.blurple()
         )
-        embed.description = f'**To see command usage:**\n`{self.prefix}help <command>`'
+        # You can edit here, replace your links or remove it.
+        embed.description = (
+            f'*To see command usage:*\n`{self.prefix}help <command>`\n\n'
+            '[Support Server](https://discord.gg/Y7EtGn6bH3) | [Invite Bot](https://top.gg/bot/841879090038177792)'
+        )
         embed.add_field(
             name='Bot',
-            value='`ping`, `react`',
+            value='`ping`, `stats`, `react`',
             inline=False
         )
         embed.add_field(
@@ -34,13 +38,16 @@ class Help(commands.Cog):
             inline=False
         )
         embed.set_footer(
-            text='Requested by {0}#{1}'.format(ctx.author.name, ctx.author.discriminator),
-            icon_url=ctx.author.avatar_url
+            text='Requested by {0}#{1}'.format(
+                ctx.author.name,
+                ctx.author.discriminator
+            ),
+            icon_url=ctx.author.avatar
         )
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed, mention_author=False)
 
     @help.command(name='ping')
-    async def help_ping(self, ctx):
+    async def help_ping(self, ctx: commands.Context):
         embed = discord.Embed(
             title=':information_source: Command: Ping',
             colour=discord.Colour.blurple()
@@ -52,13 +59,13 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Description',
-            value='Pings bot, shows bot\'s latency in milliseconds.',
+            value='Pings bot and shows an embed of Bot\'s Latency in milliseconds.',
             inline=False
         )
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed, mention_author=False)
 
     @help.command(name='react')
-    async def help_react(self, ctx):
+    async def help_react(self, ctx: commands.Context):
         embed = discord.Embed(
             title=':information_source: Command: React',
             colour=discord.Colour.blurple()
@@ -70,13 +77,31 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Description',
-            value='Reacts message (from current channel!) with emoji',
+            value='Reacts a Message (from current channel!) with emoji',
             inline=False
         )
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed, mention_author=False)
+
+    @help.command(name='stats')
+    async def help_stats(self, ctx: commands.Context):
+        embed = discord.Embed(
+            title=':information_source: Command: Statistics',
+            colour=discord.Colour.blurple()
+        )
+        embed.add_field(
+            name='Usage',
+            value=f'`{self.prefix}stats`',
+            inline=False
+        )
+        embed.add_field(
+            name='Description',
+            value='Shows an Embed with Bot Statistics (Bot Uptime, Joined Servers, Emojis)',
+            inline=False
+        )
+        await ctx.reply(embed=embed, mention_author=False)
 
     @help.command(name='list')
-    async def help_list(self, ctx):
+    async def help_list(self, ctx: commands.Context):
         embed = discord.Embed(
             title=':information_source: Command: List',
             colour=discord.Colour.blurple()
@@ -88,13 +113,13 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Description',
-            value='Shows list of bot\'s stored emojis.',
+            value='Shows an Embed of Bot\'s list stored emojis.',
             inline=False
         )
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed, mention_author=False)
 
     @help.command(name='search')
-    async def help_search(self, ctx):
+    async def help_search(self, ctx: commands.Context):
         embed = discord.Embed(
             title=':information_source: Command: Search Emoji',
             colour=discord.Colour.blurple()
@@ -111,13 +136,13 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Description',
-            value='Searchs emoji with that name or by keyword in name.',
+            value='Searchs Emoji with that name or by keyword in name.',
             inline=False
         )
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed, mention_author=False)
 
     @help.command(name='info')
-    async def help_info(self, ctx):
+    async def help_info(self, ctx: commands.Context):
         embed = discord.Embed(
             title=':information_source: Command: Emoji Info',
             colour=discord.Colour.blurple()
@@ -129,13 +154,13 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Description',
-            value='Gets emoji info. Who are uploaded, when are uploaded and it\'s animated or not.',
+            value='Shows an Embed of Emoji Info. Who are uploaded, when are uploaded and it\'s animated or not.',
             inline=False
         )
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed, mention_author=False)
 
     @help.command(name='big')
-    async def help_big(self, ctx):
+    async def help_big(self, ctx: commands.Context):
         embed = discord.Embed(
             title=':information_source: Command: "Big Image" of Emoji',
             colour=discord.Colour.blurple()
@@ -150,10 +175,10 @@ class Help(commands.Cog):
             value='Gets emoji\'s image and posts photo attachment.',
             inline=False
         )
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed, mention_author=False)
 
     @help.command(name='add')
-    async def help_add(self, ctx):
+    async def help_add(self, ctx: commands.Context):
         embed = discord.Embed(
             title=':information_source: Command: Add',
             colour=discord.Colour.blurple()
@@ -168,10 +193,10 @@ class Help(commands.Cog):
             value='Adds custom emoji to bot for further using.',
             inline=False
         )
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed, mention_author=False)
 
     @help.command(name='add-from-url')
-    async def help_addfromurl(self, ctx):
+    async def help_addfromurl(self, ctx: commands.Context):
         embed = discord.Embed(
             title=':information_source: Command: Add From URL',
             colour=discord.Colour.blurple()
@@ -186,10 +211,10 @@ class Help(commands.Cog):
             value='Adds custom emoji to bot from URL with Image.',
             inline=False
         )
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed, mention_author=False)
 
     @help.command(name='mark-nsfw')
-    async def help_marknsfw(self, ctx):
+    async def help_marknsfw(self, ctx: commands.Context):
         embed = discord.Embed(
             title=':information_source: Command: Mark Emoji as NSFW',
             colour=discord.Colour.blurple()
@@ -209,7 +234,7 @@ class Help(commands.Cog):
             value='Marks your uploaded emoji as NSFW, unmarks if already been NSFW marked.',
             inline=False
         )
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed, mention_author=False)
 
 
 def setup(bot):
