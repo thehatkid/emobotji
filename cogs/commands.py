@@ -385,7 +385,7 @@ class Commands(commands.Cog):
             is_nsfw = True if ctx.channel.is_nsfw() else False
         if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
             return await ctx.reply(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores.', mention_author=False)
-        row = await self.db.fetch_one('SELECT `id`, `name`, `animated`, `nsfw`, `author_id`, `created` FROM `emojis` WHERE `name` LIKE :name', {'name': name})
+        row = await self.db.fetch_one('SELECT `id`, `name`, `animated`, `nsfw`, `author_id`, `created` FROM `emojis` WHERE `name` = :name', {'name': name})
         if row is None:
             await ctx.reply(f':x: Emoji `{name}` not exists in bot.', mention_author=False)
         else:
@@ -413,7 +413,7 @@ class Commands(commands.Cog):
             is_nsfw = True if ctx.channel.is_nsfw() else False
         if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
             return await ctx.reply(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores.', mention_author=False)
-        row = await self.db.fetch_one('SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE :name', {'name': name})
+        row = await self.db.fetch_one('SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` = :name', {'name': name})
         if row is None:
             await ctx.reply(f':x: Emoji `{name}` not exists in bot.', mention_author=False)
         else:
@@ -435,7 +435,7 @@ class Commands(commands.Cog):
             return await ctx.reply(':x: Sorry, Webhooks and Bots can\'t add emojis to bot. 0_0')
         if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
             return await ctx.reply(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores.', mention_author=False)
-        if await self.db.fetch_one('SELECT `name` FROM `emojis` WHERE `name` LIKE :name', {'name': name}):
+        if await self.db.fetch_one('SELECT `name` FROM `emojis` WHERE `name` = :name', {'name': name}):
             return await ctx.reply(f':x: `{name}` is already taken, try other name.', mention_author=False)
         if is_nsfw in ['is-nsfw', 'is_nsfw', 'isnsfw', 'nsfw', '1', 'yes', 'y', 'true', '18+']:
             is_nsfw = True
@@ -489,7 +489,7 @@ class Commands(commands.Cog):
             return await ctx.reply(':x: Sorry, Webhooks and Bots can\'t add emojis to bot. 0_0', mention_author=False)
         if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
             return await ctx.reply(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores.', mention_author=False)
-        if await self.db.fetch_one('SELECT `name` FROM `emojis` WHERE `name` LIKE :name', {'name': name}):
+        if await self.db.fetch_one('SELECT `name` FROM `emojis` WHERE `name` = :name', {'name': name}):
             return await ctx.reply(f':x: `{name}` is already taken, try other name.', mention_author=False)
         if is_nsfw in ['is-nsfw', 'is_nsfw', 'isnsfw', 'nsfw', '1', 'yes', 'y', 'true', '18+']:
             is_nsfw = True
@@ -550,7 +550,7 @@ class Commands(commands.Cog):
         if ctx.message.webhook_id or ctx.author.bot:
             return await ctx.send(":x: Sorry, Webhooks and Bots can't mark emojis. 0_0")
 
-        row = await self.db.fetch_one('SELECT `id`, `nsfw`, `author_id` FROM `emojis` WHERE `name` LIKE :name', {'name': name})
+        row = await self.db.fetch_one('SELECT `id`, `nsfw`, `author_id` FROM `emojis` WHERE `name` = :name', {'name': name})
         if row is None:
             await ctx.reply(f':x: Emoji `{name}` not exists in bot.', mention_author=False)
         else:
@@ -571,7 +571,7 @@ class Commands(commands.Cog):
         except discord.errors.NotFound:
             await ctx.reply(':x: Message not found or not from this channel.', mention_author=False)
         else:
-            row = await self.db.fetch_one('SELECT `id`, `nsfw` FROM `emojis` WHERE `name` LIKE :name', {'name': emoji})
+            row = await self.db.fetch_one('SELECT `id`, `nsfw` FROM `emojis` WHERE `name` = :name', {'name': emoji})
             if row is None:
                 await ctx.reply(f':x: Emoji with name `{emoji}` not found in bot.', mention_author=False)
             else:

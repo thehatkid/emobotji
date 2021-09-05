@@ -95,7 +95,7 @@ class Emoji(commands.Cog):
             If not found returns nothing (empty string)
         """
         row = await self.db.fetch_one(
-            'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE :name',
+            'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` = :name',
             values={'name': name}
         )
         if row:
