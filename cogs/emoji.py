@@ -63,7 +63,7 @@ class Emoji(commands.Cog):
         if message.id in self.replies:
             try:
                 await self.replies.pop(message.id).delete()
-            except:
+            except Exception:
                 return
 
     async def parse_emojis(self, message: str, nsfw: bool) -> str:
