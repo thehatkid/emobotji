@@ -1,5 +1,5 @@
 import logging
-import time
+from datetime import datetime
 from os import environ
 from dotenv import load_dotenv
 from databases import Database
@@ -38,10 +38,33 @@ log.info('Starting discord.py {0} {1}...'.format(
 ))
 
 # Initialize Bot Class
-bot = commands.Bot(command_prefix=environ.get('BOT_PREFIX'), help_command=None)
-DiscordComponents(bot)
+intents = discord.Intents(
+    guilds=True,
+    messages=True,
+    guild_messages=True,
+    dm_messages=True
+)
+bot = commands.Bot(command_prefix=environ.get('BOT_PREFIX'), intents=intents, help_command=None)
 bot.db = database
-bot.start_time = time.time()
+bot.start_time = datetime.now()
+bot.custom_emojis = {
+    # You can put your emoji into this dictonary for Discord Components. :/
+    'next': discord.PartialEmoji(
+        name="page_next",
+        animated=False,
+        id=870595469536006154
+    ),
+    'prev': discord.PartialEmoji(
+        name="page_prev",
+        animated=False,
+        id=870595458010058782
+    ),
+    'close': discord.PartialEmoji(
+        name="page_close",
+        animated=False,
+        id=870595479505887303
+    )
+}
 
 # After bot ready actions
 async def after_bot_ready():
