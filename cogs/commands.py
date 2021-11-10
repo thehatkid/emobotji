@@ -78,9 +78,8 @@ class ViewPaginator(disnake.ui.View):
                 ephemeral=True
             )
             return False
-        else:
-            # Interaction checks passes
-            return True
+        # Interaction checks passes
+        return True
 
     async def on_timeout(self):
         embed = disnake.Embed(
