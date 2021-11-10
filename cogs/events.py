@@ -1,7 +1,7 @@
 import logging
 import sys
 import traceback
-from discord.ext import commands
+from disnake.ext import commands
 
 
 log = logging.getLogger(__name__)
