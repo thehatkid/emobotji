@@ -1,19 +1,139 @@
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timedelta
 from io import BytesIO
 import logging
 import re
 import aiohttp
 from os import environ
 from math import ceil
-import discord
-from discord.ext import commands
-from discord_components import Button
-from discord_components import ButtonStyle
-from discord_components import InteractionType
+import disnake
+from disnake.ext import commands
 
 
 log = logging.getLogger(__name__)
+
+VIEW_EMOJIS = {
+    # You can put your emoji into this dictonary for using somewhere... :/
+    'next': disnake.PartialEmoji(
+        name="page_next",
+        animated=False,
+        id=870595469536006154
+    ),
+    'prev': disnake.PartialEmoji(
+        name="page_prev",
+        animated=False,
+        id=870595458010058782
+    ),
+    'close': disnake.PartialEmoji(
+        name="page_close",
+        animated=False,
+        id=870595479505887303
+    )
+}
+
+
+class ViewPaginator(disnake.ui.View):
+    def __init__(self, author: disnake.User, embeds: list[disnake.Embed], entries: int, page: int = 0):
+        """
+        Parameters
+        ----------
+        author: :class:`~disnake.User`
+            Discord User object.
+        embeds: :class:`list[disnake.Embed]`
+            Embeds for pagination.
+        entries: :class:`int`
+            Entries count for preview.
+        page: :class:`int`
+            Starting embed page.
+        """
+        super().__init__(timeout=120)
+        self.author = author
+        self.embeds = embeds
+        self.entries = entries
+        self.page = page
+
+        # Set footer to first embed
+        self.embeds[page].set_footer(text=f'Page {self.page + 1} of {len(self.embeds)} ({self.entries} entries)')
+
+        # If have only one embed, disable all navigation buttons
+        if len(self.embeds) <= 1:
+            self.children[0].disabled = True
+            self.children[1].disabled = True
+        # If first page, disable "Previous" button
+        elif self.page == 0:
+            self.children[0].disabled = True
+            self.children[1].disabled = False
+        # If last page, disable "Next" button
+        elif self.page == len(self.embeds) - 1:
+            self.children[0].disabled = False
+            self.children[1].disabled = True
+
+    async def interaction_check(self, interaction: disnake.MessageInteraction):
+        # If Sender's User ID is not equals with User ID from Interaction...
+        if self.author.id != interaction.author.id:
+            # Interaction checks fails
+            await interaction.response.send_message(
+                content=':x: You can\'t press buttons belong command sender.',
+                ephemeral=True
+            )
+            return False
+        # Interaction checks passes
+        return True
+
+    async def on_timeout(self):
+        embed = disnake.Embed(
+            title=':x: List was closed.',
+            description='Reason: `Automatically closed due to inactivity.`',
+            colour=disnake.Colour.dark_red()
+        )
+        await self.msg.edit(embed=embed, view=None)
+
+    @disnake.ui.button(emoji=VIEW_EMOJIS['prev'], style=disnake.ButtonStyle.gray)
+    async def page_prev(self, button: disnake.ui.Button, interaction: disnake.MessageInteraction):
+        if self.page == 0:
+            await interaction.response.defer()
+        else:
+            self.page -= 1
+            # If first page, disable "Previous" button
+            if self.page == 0:
+                self.children[0].disabled = True
+                self.children[1].disabled = False
+            # Else enable all navigation buttons
+            else:
+                self.children[0].disabled = False
+                self.children[1].disabled = False
+            embed = self.embeds[self.page]
+            embed.set_footer(text=f'Page {self.page + 1} of {len(self.embeds)} ({self.entries} entries)')
+            await interaction.response.edit_message(embed=embed, view=self)
+
+    @disnake.ui.button(emoji=VIEW_EMOJIS['next'], style=disnake.ButtonStyle.gray)
+    async def page_next(self, button: disnake.ui.Button, interaction: disnake.MessageInteraction):
+        if self.page == len(self.embeds) - 1:
+            await interaction.response.defer()
+        else:
+            self.page += 1
+            # If last page, disable "Next" button
+            if self.page == len(self.embeds) - 1:
+                self.children[0].disabled = False
+                self.children[1].disabled = True
+            # Else enable all navigation buttons
+            else:
+                self.children[0].disabled = False
+                self.children[1].disabled = False
+            embed = self.embeds[self.page]
+            embed.set_footer(text=f'Page {self.page + 1} of {len(self.embeds)} ({self.entries} entries)')
+            await interaction.response.edit_message(embed=embed, view=self)
+
+    @disnake.ui.button(emoji=VIEW_EMOJIS['close'], style=disnake.ButtonStyle.red)
+    async def page_close(self, button: disnake.ui.Button, interaction: disnake.MessageInteraction):
+        embed = disnake.Embed(
+            title=':x: List was closed.',
+            description='Reason: `Closed by User.`',
+            colour=disnake.Colour.dark_red()
+        )
+        await interaction.response.edit_message(embed=embed, view=None)
+        self.stop()
 
 
 class Commands(commands.Cog):
@@ -35,6 +155,18 @@ class Commands(commands.Cog):
         async def close_http_session():
             await self.http.close()
         self.bot.loop.create_task(close_http_session())
+
+    @commands.command(name='q')
+    async def cmd_testpages(self, ctx: commands.Context):
+        embeds = [
+            disnake.Embed(title='Test', description='One!'),
+            disnake.Embed(title='Test', description='Two!'),
+            disnake.Embed(title='Test', description='Three!'),
+            disnake.Embed(title='Test', description='Four!'),
+            disnake.Embed(title='Test', description='Five!')
+        ]
+        view = ViewPaginator(ctx.author, embeds, 55)
+        view.msg = await ctx.send(embed=embeds[0], view=view)
 
     @commands.command(name='reload', description='Reloads extenstion/cog (requires OWNER_ID)')
     @commands.check(lambda ctx: ctx.author.id == int(environ.get('OWNER_ID')))
@@ -58,9 +190,9 @@ class Commands(commands.Cog):
 
     @commands.command(name='ping', description='Shows embed with bot latency')
     async def cmd_ping(self, ctx: commands.Context):
-        embed = discord.Embed(
+        embed = disnake.Embed(
             title=':ping_pong: Pong!',
-            colour=discord.Colour.blurple()
+            colour=disnake.Colour.blurple()
         )
         embed.set_footer(
             text='Requested by {0}#{1}'.format(
@@ -95,7 +227,7 @@ class Commands(commands.Cog):
         ) AS emojis_total_nsfw
         """)
 
-        embed = discord.Embed(title=':information_source: Bot Statistics', colour=discord.Colour.blurple())
+        embed = disnake.Embed(title=':information_source: Bot Statistics', colour=disnake.Colour.blurple())
         embed.add_field(
             name=':hourglass: Bot Uptime',
             value='{0}\n*(up at <t:{1}:f>)*'.format(uptime_str, int(self.bot.start_time.timestamp())),
@@ -120,266 +252,98 @@ class Commands(commands.Cog):
 
     @commands.command(name='list', description='Shows an embed with emoji list')
     async def cmd_list(self, ctx: commands.Context, page: int = 1):
-        if isinstance(ctx.channel, discord.DMChannel):
-            nsfw = False
+        if isinstance(ctx.channel, disnake.DMChannel):
+            NSFW = False
         else:
-            nsfw = True if ctx.channel.is_nsfw() else False
-        if nsfw:
-            emoji_list = await self.db.fetch_all('SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` ORDER BY `name` ASC')
+            NSFW = True if ctx.channel.is_nsfw() else False
+
+        if NSFW:
+            EMOJI_LIST = await self.db.fetch_all('SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` ORDER BY `name` ASC')
         else:
-            emoji_list = await self.db.fetch_all('SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `nsfw` = 0 ORDER BY `name` ASC')
-        if len(emoji_list) == 0:
+            EMOJI_LIST = await self.db.fetch_all('SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `nsfw` = 0 ORDER BY `name` ASC')
+
+        if len(EMOJI_LIST) == 0:
             return await ctx.reply(':x: Bot not have any emojis.', mention_author=False)
 
-        limit = 10
-        total = ceil(len(emoji_list) / limit)
+        embeds = []
+        position = 0
+        limit = 15
+        total = ceil(len(EMOJI_LIST) / limit)
 
         if page > total:
             page = total
 
-        embed = discord.Embed(
-            title='Bot Emoji List',
-            colour=discord.Colour.blurple()
-        )
-        embed.set_footer(text=f'Page: {page} of {total} ({len(emoji_list)} entries)')
-
-        description = ''
-        for i in range(limit * (page - 1), limit * page):
-            try:
-                description += '<{2}:{1}:{0}> [\:{1}\:](https://cdn.discordapp.com/emojis/{0}.{3}){4}\n'.format(
-                    emoji_list[i][0], # Emoji ID
-                    emoji_list[i][1], # Emoji Name
-                    'a' if emoji_list[i][2] else '', # Emoji is Animated?
-                    'gif' if emoji_list[i][2] else 'png', # Emoji Format
-                    ' *(NSFW)*' if emoji_list[i][3] else '' # NSFW marking
-                )
-            except IndexError:
-                break
-
-        embed.description = description
-        buttons = [
-            # Button: Previous Page
-            Button(
-                id='list_page:{}'.format(page - 1),
-                emoji=self.bot.custom_emojis['prev'],
-                style=ButtonStyle.grey,
-                disabled=True if page <= 1 else False
-            ),
-            # Button: Next Page
-            Button(
-                id='list_page:{}'.format(page + 1),
-                emoji=self.bot.custom_emojis['next'],
-                style=ButtonStyle.grey,
-                disabled=True if page >= total else False
-            ),
-            # Button: Close the Embed
-            Button(
-                id='list_close',
-                emoji=self.bot.custom_emojis['close'],
-                style=ButtonStyle.red
-            )
-        ]
-        msg = await ctx.reply(embed=embed, components=[buttons], mention_author=False)
-
-        def check(res):
-            return msg.id == res.message.id and ctx.author.id == res.user.id and ctx.channel.id == (res.channel or ctx.channel).id
-
         while True:
+            embed = disnake.Embed(title='Bot Emoji List', color=disnake.Colour.blurple(), description='')
             try:
-                res = await self.bot.wait_for('button_click', check=check, timeout=120)
-            except asyncio.TimeoutError:
-                embed = discord.Embed(
-                    title=':x: List was closed.',
-                    description='Reason: *Timeout.*'
-                )
-                await msg.edit(embed=embed, components=[])
+                for i in range(0 + position, limit + position):
+                    embed.description += '<{2}:{1}:{0}> [\\:{1}:](https://cdn.discordapp.com/emojis/{0}.{3}){4}\n'.format(
+                        EMOJI_LIST[i][0], # Emoji ID
+                        EMOJI_LIST[i][1], # Emoji Name
+                        'a' if EMOJI_LIST[i][2] else '', # Emoji is Animated?
+                        'gif' if EMOJI_LIST[i][2] else 'png', # Emoji Format
+                        ' *(NSFW)*' if EMOJI_LIST[i][3] else '' # NSFW marking
+                    )
+            except IndexError:
+                embeds.append(embed)
                 break
             else:
-                if res.custom_id == 'list_close':
-                    embed = discord.Embed(
-                        title=":x: List was closed.",
-                        description='Reason: *Closed by user.*'
-                    )
-                    await res.respond(type=InteractionType.UpdateMessage, embed=embed, components=[])
-                    break
-                elif res.custom_id.startswith('list_page:'):
-                    page = int(res.custom_id.split(':')[1])
-                    embed.set_footer(text=f'Page: {page} of {total} ({len(emoji_list)} entries)')
+                position += limit
+                embeds.append(embed)
 
-                    description = ''
-                    for i in range(limit * (page - 1), limit * page):
-                        try:
-                            description += '<{2}:{1}:{0}> [\:{1}\:](https://cdn.discordapp.com/emojis/{0}.{3}){4}\n'.format(
-                                emoji_list[i][0], # Emoji ID
-                                emoji_list[i][1], # Emoji Name
-                                'a' if emoji_list[i][2] else '', # Emoji is Animated?
-                                'gif' if emoji_list[i][2] else 'png', # Emoji Format
-                                ' *(NSFW)*' if emoji_list[i][3] else '' # NSFW marking
-                            )
-                        except IndexError:
-                            break
-
-                    embed.description = description
-                    buttons = [
-                        # Button: Previous Page
-                        Button(
-                            id='list_page:{}'.format(page - 1),
-                            emoji=self.bot.custom_emojis['prev'],
-                            style=ButtonStyle.grey,
-                            disabled=True if page <= 1 else False
-                        ),
-                        # Button: Next Page
-                        Button(
-                            id='list_page:{}'.format(page + 1),
-                            emoji=self.bot.custom_emojis['next'],
-                            style=ButtonStyle.grey,
-                            disabled=True if page >= total else False
-                        ),
-                        # Button: Close the Embed
-                        Button(
-                            id='list_close',
-                            emoji=self.bot.custom_emojis['close'],
-                            style=ButtonStyle.red
-                        )
-                    ]
-                    await res.respond(type=InteractionType.UpdateMessage, embed=embed, components=[buttons])
+        view = ViewPaginator(ctx.author, embeds, len(EMOJI_LIST), page - 1)
+        view.msg = await ctx.send(embed=embeds[page - 1], view=view)
 
     @commands.command(name='search', description='Searching emoji in database.', aliases=['find'])
     async def cmd_search(self, ctx: commands.Context, name: str):
-        if isinstance(ctx.channel, discord.DMChannel):
-            nsfw = False
+        if isinstance(ctx.channel, disnake.DMChannel):
+            NSFW = False
         else:
-            nsfw = True if ctx.channel.is_nsfw() else False
-        if nsfw:
-            emoji_list = await self.db.fetch_all(
+            NSFW = True if ctx.channel.is_nsfw() else False
+
+        if NSFW:
+            EMOJI_LIST = await self.db.fetch_all(
                 'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE :name ORDER BY `name` ASC',
                 {'name': f'%{name}%'}
             )
         else:
-            emoji_list = await self.db.fetch_all(
+            EMOJI_LIST = await self.db.fetch_all(
                 'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE :name AND `nsfw` = 0 ORDER BY `name` ASC',
                 {'name': f'%{name}%'}
             )
-        if len(emoji_list) == 0:
+
+        if len(EMOJI_LIST) == 0:
             return await ctx.reply(f':x: Emoji with name/word `{name}` not exists or not found.', mention_author=False)
 
-        page = 1
-        limit = 10
-        total = ceil(len(emoji_list) / limit)
-
-        if page > total:
-            page = total
-
-        embed = discord.Embed(
-            title='Bot Emoji List',
-            colour=discord.Colour.blurple()
-        )
-        embed.set_footer(text=f'Page: {page} of {total} ({len(emoji_list)} entries)')
-
-        description = ''
-        for i in range(limit * (page - 1), limit * page):
-            try:
-                description += '<{2}:{1}:{0}> [\:{1}\:](https://cdn.discordapp.com/emojis/{0}.{3}){4}\n'.format(
-                    emoji_list[i][0], # Emoji ID
-                    emoji_list[i][1], # Emoji Name
-                    'a' if emoji_list[i][2] else '', # Emoji is Animated?
-                    'gif' if emoji_list[i][2] else 'png', # Emoji Format
-                    ' *(NSFW)*' if emoji_list[i][3] else '' # NSFW marking
-                )
-            except IndexError:
-                break
-
-        embed.description = description
-        buttons = [
-            # Button: Previous Page
-            Button(
-                id='list_page:{}'.format(page - 1),
-                emoji=self.bot.custom_emojis['prev'],
-                style=ButtonStyle.grey,
-                disabled=True if page <= 1 else False
-            ),
-            # Button: Next Page
-            Button(
-                id='list_page:{}'.format(page + 1),
-                emoji=self.bot.custom_emojis['next'],
-                style=ButtonStyle.grey,
-                disabled=True if page >= total else False
-            ),
-            # Button: Close the Embed
-            Button(
-                id='list_close',
-                emoji=self.bot.custom_emojis['close'],
-                style=ButtonStyle.red
-            )
-        ]
-        msg = await ctx.reply(embed=embed, components=[buttons], mention_author=False)
-
-        def check(res):
-            return msg.id == res.message.id and ctx.author.id == res.user.id and ctx.channel.id == (res.channel or ctx.channel).id
+        embeds = []
+        position = 0
+        limit = 15
+        total = ceil(len(EMOJI_LIST) / limit)
 
         while True:
+            embed = disnake.Embed(title=f'Found list by word: `{name}`', color=disnake.Colour.blurple(), description='')
             try:
-                res = await self.bot.wait_for('button_click', check=check, timeout=120)
-            except asyncio.TimeoutError:
-                embed = discord.Embed(
-                    title=':x: List was closed.',
-                    description='Reason: *Timeout.*'
-                )
-                await msg.edit(embed=embed, components=[])
+                for i in range(0 + position, limit + position):
+                    embed.description += '<{2}:{1}:{0}> [\\:{1}:](https://cdn.discordapp.com/emojis/{0}.{3}){4}\n'.format(
+                        EMOJI_LIST[i][0], # Emoji ID
+                        EMOJI_LIST[i][1], # Emoji Name
+                        'a' if EMOJI_LIST[i][2] else '', # Emoji is Animated?
+                        'gif' if EMOJI_LIST[i][2] else 'png', # Emoji Format
+                        ' *(NSFW)*' if EMOJI_LIST[i][3] else '' # NSFW marking
+                    )
+            except IndexError:
+                embeds.append(embed)
                 break
             else:
-                if res.custom_id == 'list_close':
-                    embed = discord.Embed(
-                        title=":x: List was closed.",
-                        description='Reason: *Closed by user.*'
-                    )
-                    await res.respond(type=InteractionType.UpdateMessage, embed=embed, components=[])
-                    break
-                elif res.custom_id.startswith('list_page:'):
-                    page = int(res.custom_id.split(':')[1])
-                    embed.set_footer(text=f'Page: {page} of {total} ({len(emoji_list)} entries)')
+                position += limit
+                embeds.append(embed)
 
-                    description = ''
-                    for i in range(limit * (page - 1), limit * page):
-                        try:
-                            description += '<{2}:{1}:{0}> [\:{1}\:](https://cdn.discordapp.com/emojis/{0}.{3}){4}\n'.format(
-                                emoji_list[i][0], # Emoji ID
-                                emoji_list[i][1], # Emoji Name
-                                'a' if emoji_list[i][2] else '', # Emoji is Animated?
-                                'gif' if emoji_list[i][2] else 'png', # Emoji Format
-                                ' *(NSFW)*' if emoji_list[i][3] else '' # NSFW marking
-                            )
-                        except IndexError:
-                            break
-
-                    embed.description = description
-                    buttons = [
-                        # Button: Previous Page
-                        Button(
-                            id='list_page:{}'.format(page - 1),
-                            emoji=self.bot.custom_emojis['prev'],
-                            style=ButtonStyle.grey,
-                            disabled=True if page <= 1 else False
-                        ),
-                        # Button: Next Page
-                        Button(
-                            id='list_page:{}'.format(page + 1),
-                            emoji=self.bot.custom_emojis['next'],
-                            style=ButtonStyle.grey,
-                            disabled=True if page >= total else False
-                        ),
-                        # Button: Close the Embed
-                        Button(
-                            id='list_close',
-                            emoji=self.bot.custom_emojis['close'],
-                            style=ButtonStyle.red
-                        )
-                    ]
-                    await res.respond(type=InteractionType.UpdateMessage, embed=embed, components=[buttons])
+        view = ViewPaginator(ctx.author, embeds, len(EMOJI_LIST))
+        view.msg = await ctx.send(embed=embeds[0], view=view)
 
     @commands.command(name='info', description='Shows an embed with emoji infomation by name. Who created, when emoji was uploaded, etc.')
     async def cmd_info(self, ctx: commands.Context, name: str):
-        if isinstance(ctx.channel, discord.DMChannel):
+        if isinstance(ctx.channel, disnake.DMChannel):
             is_nsfw = False
         else:
             is_nsfw = True if ctx.channel.is_nsfw() else False
@@ -389,9 +353,9 @@ class Commands(commands.Cog):
         if row is None:
             await ctx.reply(f':x: Emoji `{name}` not exists in bot.', mention_author=False)
         else:
-            embed = discord.Embed(
+            embed = disnake.Embed(
                 title=f':information_source: Emoji `{name}`',
-                colour=discord.Colour.blurple()
+                colour=disnake.Colour.blurple()
             )
 
             if not is_nsfw and row[3]:
@@ -407,7 +371,7 @@ class Commands(commands.Cog):
 
     @commands.command(name='big', description='Posts full-sized image of emoji.')
     async def cmd_big(self, ctx: commands.Context, name: str):
-        if isinstance(ctx.channel, discord.DMChannel):
+        if isinstance(ctx.channel, disnake.DMChannel):
             is_nsfw = False
         else:
             is_nsfw = True if ctx.channel.is_nsfw() else False
@@ -426,7 +390,7 @@ class Commands(commands.Cog):
                     image = BytesIO(await response.read())
                 await ctx.send(
                     content='<{0}:{1}:{2}>'.format('a' if row[2] else '', row[1], row[0]),
-                    file=discord.File(fp=image, filename='{0}.{1}'.format(row[1], image_format))
+                    file=disnake.File(fp=image, filename='{0}.{1}'.format(row[1], image_format))
                 )
 
     @commands.command(name='add', description='Adds custom emoji.')
@@ -465,7 +429,7 @@ class Commands(commands.Cog):
                 name=name, image=image,
                 reason=f'Addition Requested by {author}'
             )
-        except discord.errors.HTTPException as e:
+        except disnake.errors.HTTPException as e:
             if e.status == 429:
                 await ctx.reply(f':x: Bot have rate limited.\n`{e}`', mention_author=False)
             await ctx.reply(f':x: Emoji was not added to bot.\n`{e}`', mention_author=False)
@@ -527,7 +491,7 @@ class Commands(commands.Cog):
                 name=name, image=image,
                 reason=f'Addition Requested by {author}'
             )
-        except discord.errors.HTTPException as e:
+        except disnake.errors.HTTPException as e:
             if e.status == 429:
                 return await ctx.reply(f':x: Bot have rate limited.\n`{e}`', mention_author=False)
             await ctx.reply(f':x: Emoji was not added to bot.\n`{e}`', mention_author=False)
@@ -568,7 +532,7 @@ class Commands(commands.Cog):
     async def cmd_react(self, ctx: commands.Context, emoji: str, message_id: int):
         try:
             msg = await ctx.fetch_message(message_id)
-        except discord.errors.NotFound:
+        except disnake.errors.NotFound:
             await ctx.reply(':x: Message not found or not from this channel.', mention_author=False)
         else:
             row = await self.db.fetch_one('SELECT `id`, `nsfw` FROM `emojis` WHERE `name` = :name', {'name': emoji})

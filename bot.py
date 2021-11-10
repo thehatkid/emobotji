@@ -3,9 +3,8 @@ from datetime import datetime
 from os import environ
 from dotenv import load_dotenv
 from databases import Database
-import discord
-from discord.ext import commands
-from discord_components import DiscordComponents
+import disnake
+from disnake.ext import commands
 
 
 # Setting up Logging
@@ -33,50 +32,40 @@ if not environ.get('BOT_TOKEN'):
     log.error('No Environment Variable for Bot Token. (BOT_TOKEN)')
     exit()
 
-log.info('Starting discord.py {0} {1}...'.format(
-    discord.__version__, discord.version_info.releaselevel
+log.info('Starting disnake {0} {1}...'.format(
+    disnake.__version__, disnake.version_info.releaselevel
 ))
 
 # Initialize Bot Class
-intents = discord.Intents(
+intents = disnake.Intents(
     guilds=True,
     messages=True,
     guild_messages=True,
     dm_messages=True
 )
-bot = commands.Bot(command_prefix=environ.get('BOT_PREFIX'), intents=intents, help_command=None)
+bot = commands.Bot(
+    command_prefix=environ.get('BOT_PREFIX'),
+    intents=intents,
+    help_command=None,
+    status=disnake.Status.dnd,
+    activity=disnake.Activity(
+        type=disnake.ActivityType.watching,
+        name='for Starting...'
+    )
+)
 bot.db = database
 bot.start_time = datetime.now()
-bot.custom_emojis = {
-    # You can put your emoji into this dictonary for Discord Components. :/
-    'next': discord.PartialEmoji(
-        name="page_next",
-        animated=False,
-        id=870595469536006154
-    ),
-    'prev': discord.PartialEmoji(
-        name="page_prev",
-        animated=False,
-        id=870595458010058782
-    ),
-    'close': discord.PartialEmoji(
-        name="page_close",
-        animated=False,
-        id=870595479505887303
-    )
-}
 
 # After bot ready actions
 async def after_bot_ready():
     await bot.wait_until_ready()
     await bot.db.connect()
-    DiscordComponents(bot)
 
 # Bot's Activity
 async def bot_activities():
-    game = discord.Game('with emojis | prefix: {0}'.format(environ.get('BOT_PREFIX')))
+    game = disnake.Game('with emojis | prefix: {0}'.format(environ.get('BOT_PREFIX')))
     await bot.wait_until_ready()
-    await bot.change_presence(activity=game, status=discord.Status.online)
+    await bot.change_presence(activity=game, status=disnake.Status.online)
 
 bot.loop.create_task(after_bot_ready())
 bot.loop.create_task(bot_activities())

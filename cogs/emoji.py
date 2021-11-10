@@ -1,7 +1,7 @@
 import logging
 import re
-import discord
-from discord.ext import commands
+import disnake
+from disnake.ext import commands
 
 
 log = logging.getLogger(__name__)
@@ -21,11 +21,11 @@ class Emoji(commands.Cog):
         self.replies = {}
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: disnake.Message):
         if message.author.bot:
             return
 
-        if isinstance(message.channel, discord.DMChannel):
+        if isinstance(message.channel, disnake.DMChannel):
             is_nsfw = False
         else:
             is_nsfw = True if message.channel.is_nsfw() else False
@@ -35,7 +35,7 @@ class Emoji(commands.Cog):
             self.replies[message.id] = await message.channel.send(emojis)
 
     @commands.Cog.listener()
-    async def on_message_edit(self, before: discord.Message, after: discord.Message):
+    async def on_message_edit(self, before: disnake.Message, after: disnake.Message):
         if before.author.bot:
             return
 
@@ -43,7 +43,7 @@ class Emoji(commands.Cog):
             return
         reply = self.replies[after.id]
 
-        if isinstance(after.channel, discord.DMChannel):
+        if isinstance(after.channel, disnake.DMChannel):
             is_nsfw = False
         else:
             is_nsfw = True if after.channel.is_nsfw() else False
@@ -56,7 +56,7 @@ class Emoji(commands.Cog):
         await reply.edit(content=emojis)
 
     @commands.Cog.listener()
-    async def on_message_delete(self, message: discord.Message):
+    async def on_message_delete(self, message: disnake.Message):
         if message.author.bot:
             return
 

@@ -1,7 +1,7 @@
 import logging
 from os import environ
-import discord
-from discord.ext import commands
+import disnake
+from disnake.ext import commands
 
 
 log = logging.getLogger(__name__)
@@ -13,9 +13,9 @@ class Help(commands.Cog):
 
     @commands.group(invoke_without_command=True)
     async def help(self, ctx: commands.Context):
-        embed = discord.Embed(
+        embed = disnake.Embed(
             title=':information_source: Bot Help List',
-            colour=discord.Colour.blurple()
+            colour=disnake.Colour.blurple()
         )
         # You can edit here, replace your links or remove it.
         embed.description = (
@@ -48,9 +48,9 @@ class Help(commands.Cog):
 
     @help.command(name='ping')
     async def help_ping(self, ctx: commands.Context):
-        embed = discord.Embed(
+        embed = disnake.Embed(
             title=':information_source: Command: Ping',
-            colour=discord.Colour.blurple()
+            colour=disnake.Colour.blurple()
         )
         embed.add_field(
             name='Usage',
@@ -66,9 +66,9 @@ class Help(commands.Cog):
 
     @help.command(name='react')
     async def help_react(self, ctx: commands.Context):
-        embed = discord.Embed(
+        embed = disnake.Embed(
             title=':information_source: Command: React',
-            colour=discord.Colour.blurple()
+            colour=disnake.Colour.blurple()
         )
         embed.add_field(
             name='Usage',
@@ -84,9 +84,9 @@ class Help(commands.Cog):
 
     @help.command(name='stats')
     async def help_stats(self, ctx: commands.Context):
-        embed = discord.Embed(
+        embed = disnake.Embed(
             title=':information_source: Command: Statistics',
-            colour=discord.Colour.blurple()
+            colour=disnake.Colour.blurple()
         )
         embed.add_field(
             name='Usage',
@@ -102,9 +102,9 @@ class Help(commands.Cog):
 
     @help.command(name='list')
     async def help_list(self, ctx: commands.Context):
-        embed = discord.Embed(
+        embed = disnake.Embed(
             title=':information_source: Command: List',
-            colour=discord.Colour.blurple()
+            colour=disnake.Colour.blurple()
         )
         embed.add_field(
             name='Usage',
@@ -120,9 +120,9 @@ class Help(commands.Cog):
 
     @help.command(name='search')
     async def help_search(self, ctx: commands.Context):
-        embed = discord.Embed(
+        embed = disnake.Embed(
             title=':information_source: Command: Search Emoji',
-            colour=discord.Colour.blurple()
+            colour=disnake.Colour.blurple()
         )
         embed.add_field(
             name='Usage',
@@ -143,9 +143,9 @@ class Help(commands.Cog):
 
     @help.command(name='info')
     async def help_info(self, ctx: commands.Context):
-        embed = discord.Embed(
+        embed = disnake.Embed(
             title=':information_source: Command: Emoji Info',
-            colour=discord.Colour.blurple()
+            colour=disnake.Colour.blurple()
         )
         embed.add_field(
             name='Usage',
@@ -161,9 +161,9 @@ class Help(commands.Cog):
 
     @help.command(name='big')
     async def help_big(self, ctx: commands.Context):
-        embed = discord.Embed(
+        embed = disnake.Embed(
             title=':information_source: Command: "Big Image" of Emoji',
-            colour=discord.Colour.blurple()
+            colour=disnake.Colour.blurple()
         )
         embed.add_field(
             name='Usage',
@@ -179,9 +179,9 @@ class Help(commands.Cog):
 
     @help.command(name='add')
     async def help_add(self, ctx: commands.Context):
-        embed = discord.Embed(
+        embed = disnake.Embed(
             title=':information_source: Command: Add',
-            colour=discord.Colour.blurple()
+            colour=disnake.Colour.blurple()
         )
         embed.add_field(
             name='Usage',
@@ -197,9 +197,9 @@ class Help(commands.Cog):
 
     @help.command(name='add-from-url')
     async def help_addfromurl(self, ctx: commands.Context):
-        embed = discord.Embed(
+        embed = disnake.Embed(
             title=':information_source: Command: Add From URL',
-            colour=discord.Colour.blurple()
+            colour=disnake.Colour.blurple()
         )
         embed.add_field(
             name='Usage',
@@ -215,9 +215,9 @@ class Help(commands.Cog):
 
     @help.command(name='mark-nsfw')
     async def help_marknsfw(self, ctx: commands.Context):
-        embed = discord.Embed(
+        embed = disnake.Embed(
             title=':information_source: Command: Mark Emoji as NSFW',
-            colour=discord.Colour.blurple()
+            colour=disnake.Colour.blurple()
         )
         embed.add_field(
             name='Usage',
