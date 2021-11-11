@@ -3,15 +3,17 @@ from datetime import datetime
 from datetime import timedelta
 from io import BytesIO
 import logging
+import yaml
 import re
 import aiohttp
-from os import environ
 from math import ceil
 import disnake
 from disnake.ext import commands
 
 
 log = logging.getLogger(__name__)
+
+cfg = yaml.safe_load(open('config.yml', 'r'))
 
 VIEW_EMOJIS = {
     # You can put your emoji into this dictonary for using somewhere... :/
@@ -144,7 +146,7 @@ class Commands(commands.Cog):
         self.db = bot.db
         self.http = aiohttp.ClientSession(
             loop=bot.loop, read_timeout=10,
-            headers={'User-Agent': environ.get('USER_AGENT')}
+            headers={'User-Agent': cfg['bot']['user-agent']}
         )
         self.REGEX_EMOJI = re.compile(
             r'\\?<(a?)\\?:[\w_]{2,32}\\?:(\d{12,24})\\?>',
@@ -156,20 +158,8 @@ class Commands(commands.Cog):
             await self.http.close()
         self.bot.loop.create_task(close_http_session())
 
-    @commands.command(name='q')
-    async def cmd_testpages(self, ctx: commands.Context):
-        embeds = [
-            disnake.Embed(title='Test', description='One!'),
-            disnake.Embed(title='Test', description='Two!'),
-            disnake.Embed(title='Test', description='Three!'),
-            disnake.Embed(title='Test', description='Four!'),
-            disnake.Embed(title='Test', description='Five!')
-        ]
-        view = ViewPaginator(ctx.author, embeds, 55)
-        view.msg = await ctx.send(embed=embeds[0], view=view)
-
     @commands.command(name='reload', description='Reloads extenstion/cog (requires OWNER_ID)')
-    @commands.check(lambda ctx: ctx.author.id == int(environ.get('OWNER_ID')))
+    @commands.check(lambda ctx: ctx.author.id in cfg['bot']['supervisors'])
     async def cmd_reload(self, ctx: commands.Context, which: str = 'all'):
         if which == 'all':
             self.bot.reload_extension('cogs.events')
@@ -518,7 +508,7 @@ class Commands(commands.Cog):
         if row is None:
             await ctx.reply(f':x: Emoji `{name}` not exists in bot.', mention_author=False)
         else:
-            if ctx.author.id == int(environ.get('OWNER_ID')) or int(row[2]) == ctx.author.id:
+            if ctx.author.id in cfg['bot']['supervisors'] or int(row[2]) == ctx.author.id:
                 if row[1]:
                     await self.db.execute('UPDATE `emojis` SET `nsfw` = 0 WHERE `id` = :id', {'id': row[0]})
                     await ctx.reply(f':white_check_mark: Emoji `{name}` was **unmarked** as NSFW.', mention_author=False)

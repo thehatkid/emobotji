@@ -1,0 +1,13 @@
+bot:
+  token: "Discord Bot Token"
+  prefix: "e!"
+  user-agent: "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)"
+  supervisors:
+    - Discord User ID(s) Integer for Manage Bot
+
+mysql:
+  host: "MySQL Host Address"
+  port: 3306
+  user: "MySQL Username"
+  password: "MySQL User Password"
+  database: "MySQL Database Name"

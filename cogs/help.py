@@ -1,4 +1,5 @@
 import logging
+import yaml
 from os import environ
 import disnake
 from disnake.ext import commands
@@ -6,10 +7,12 @@ from disnake.ext import commands
 
 log = logging.getLogger(__name__)
 
+cfg = yaml.safe_load(open('config.yml', 'r'))
+
 
 class Help(commands.Cog):
     def __init__(self, _):
-        self.prefix = environ.get('BOT_PREFIX')
+        self.prefix = cfg['bot']['prefix']
 
     @commands.group(invoke_without_command=True)
     async def help(self, ctx: commands.Context):
