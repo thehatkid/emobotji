@@ -19,21 +19,22 @@ log.info('Starting disnake {0} {1}...'.format(
     disnake.__version__, disnake.version_info.releaselevel
 ))
 
-# Initialize Bot Class
 intents = disnake.Intents(
     guilds=True,
     messages=True,
     guild_messages=True,
     dm_messages=True
 )
+
+# Initialize Bot Class
 bot = commands.Bot(
     command_prefix=cfg['bot']['prefix'],
-    intents=intents,
     help_command=None,
-    status=disnake.Status.dnd,
+    intents=intents,
+    status=disnake.Status.online,
     activity=disnake.Activity(
-        type=disnake.ActivityType.watching,
-        name='for Starting...'
+        type=disnake.ActivityType.playing,
+        name=f'with Emojis | Help: {cfg["bot"]["prefix"]}help'
     )
 )
 # Connect MySQL Database
@@ -52,20 +53,18 @@ bot.start_time = datetime.now()
 # After bot ready actions
 async def after_bot_ready():
     await bot.wait_until_ready()
+    # Connect Database
     await bot.db.connect()
 
-# Bot's Activity
-async def bot_activities():
-    game = disnake.Game('with emojis | prefix: {0}'.format(cfg['bot']['prefix']))
-    await bot.wait_until_ready()
-    await bot.change_presence(activity=game, status=disnake.Status.online)
-
 bot.loop.create_task(after_bot_ready())
-bot.loop.create_task(bot_activities())
 
 # Loading Cogs
 bot.load_extension('cogs.events')
 bot.load_extension('cogs.commands')
+bot.load_extension('cogs.categories.misc')
+bot.load_extension('cogs.categories.listing')
+bot.load_extension('cogs.categories.add')
+bot.load_extension('cogs.categories.manage')
 bot.load_extension('cogs.help')
 bot.load_extension('cogs.emoji')
 

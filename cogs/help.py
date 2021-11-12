@@ -1,6 +1,5 @@
 import logging
 import yaml
-from os import environ
 import disnake
 from disnake.ext import commands
 
@@ -94,6 +93,11 @@ class Help(commands.Cog):
         embed.add_field(
             name='Usage',
             value=f'`{self.prefix}stats`',
+            inline=False
+        )
+        embed.add_field(
+            name='Aliases',
+            value='`stat`, `statistics`',
             inline=False
         )
         embed.add_field(
