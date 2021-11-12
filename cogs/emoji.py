@@ -10,15 +10,11 @@ log = logging.getLogger(__name__)
 class Emoji(commands.Cog):
     """Message Event Handling cog for Discord Bot."""
 
-    regex = re.compile(
-        r'(?!<:)<?(;|:)([\w_]{2,32})(?!:\d+>)\1(?:\d+>)?',
-        re.ASCII
-    )
-
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.db = bot.db
         self.replies = {}
+        self.REGEX = re.compile(r'(?!<:)<?(;|:)([\w_]{2,32})(?!:\d+>)\1(?:\d+>)?', re.ASCII)
 
     @commands.Cog.listener()
     async def on_message(self, message: disnake.Message):
@@ -84,7 +80,7 @@ class Emoji(commands.Cog):
             If not found returns :class:`None`
         """
         emojis = []
-        for match in self.regex.finditer(message):
+        for match in self.REGEX.finditer(message):
             emojis.append(await self.emoji_get(match.group(2), nsfw))
         if not emojis:
             return None
@@ -126,8 +122,8 @@ class Emoji(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Emoji(bot))
-    log.info('Load cog.')
+    log.info('Loaded cog.')
 
 
 def teardown(bot):
-    log.info('Unload cog.')
+    log.info('Unloaded cog.')

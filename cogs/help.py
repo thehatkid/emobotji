@@ -5,28 +5,27 @@ from disnake.ext import commands
 
 
 log = logging.getLogger(__name__)
-
 cfg = yaml.safe_load(open('config.yml', 'r'))
 
 
 class Help(commands.Cog):
-    def __init__(self, _):
-        self.prefix = cfg['bot']['prefix']
+    def __init__(self, bot: commands.Bot):
+        super().__init__()
+        self.PREFIX = cfg['bot']['prefix']
+        self.INVITE_SERVER_URL = cfg['bot']['misc']['invite-server']
+        self.INVITE_BOT_URL = cfg['bot']['misc']['invite-bot']
 
     @commands.group(invoke_without_command=True)
     async def help(self, ctx: commands.Context):
-        embed = disnake.Embed(
-            title=':information_source: Bot Help List',
-            colour=disnake.Colour.blurple()
-        )
-        # You can edit here, replace your links or remove it.
-        embed.description = (
-            f'*To see command usage:*\n`{self.prefix}help <command>`\n\n'
-            '[Support Server](https://discord.gg/Y7EtGn6bH3) | [Invite Bot](https://top.gg/bot/841879090038177792)'
-        )
+        embed = disnake.Embed(title=':information_source: Bot Help List', colour=disnake.Colour.blurple())
+        embed.description = f'To see command usage: `{self.PREFIX}help <command>`'
+        if self.INVITE_SERVER_URL:
+            embed.description += f'\n\nNeed help? [Join to Support Server]({self.INVITE_SERVER_URL})'
+        if self.INVITE_BOT_URL:
+            embed.description += f'\n\nNeed invite bot? [Invite Bot]({self.INVITE_BOT_URL})'
         embed.add_field(
             name='Bot',
-            value='`ping`, `stats`, `react`',
+            value='`ping`, `stats`, `invite`, `support`, `react`',
             inline=False
         )
         embed.add_field(
@@ -56,7 +55,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value=f'`{self.prefix}ping`',
+            value=f'`{self.PREFIX}ping`',
             inline=False
         )
         embed.add_field(
@@ -74,7 +73,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value=f'`{self.prefix}react <name of emoji> <message id from this channel>`',
+            value=f'`{self.PREFIX}react <name of emoji> <message id from this channel>`',
             inline=False
         )
         embed.add_field(
@@ -92,7 +91,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value=f'`{self.prefix}stats`',
+            value=f'`{self.PREFIX}stats`',
             inline=False
         )
         embed.add_field(
@@ -107,6 +106,42 @@ class Help(commands.Cog):
         )
         await ctx.reply(embed=embed, mention_author=False)
 
+    @help.command(name='invite')
+    async def help_invite(self, ctx: commands.Context):
+        embed = disnake.Embed(
+            title=':information_source: Command: Invite',
+            colour=disnake.Colour.blurple()
+        )
+        embed.add_field(
+            name='Usage',
+            value=f'`{self.PREFIX}invite`',
+            inline=False
+        )
+        embed.add_field(
+            name='Description',
+            value='Sends Bot Invite link in chat.',
+            inline=False
+        )
+        await ctx.reply(embed=embed, mention_author=False)
+
+    @help.command(name='support')
+    async def help_support(self, ctx: commands.Context):
+        embed = disnake.Embed(
+            title=':information_source: Command: Support',
+            colour=disnake.Colour.blurple()
+        )
+        embed.add_field(
+            name='Usage',
+            value=f'`{self.PREFIX}support`',
+            inline=False
+        )
+        embed.add_field(
+            name='Description',
+            value='Sends Bot Owner\'s Discord Support Server in chat.',
+            inline=False
+        )
+        await ctx.reply(embed=embed, mention_author=False)
+
     @help.command(name='list')
     async def help_list(self, ctx: commands.Context):
         embed = disnake.Embed(
@@ -115,7 +150,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value=f'`{self.prefix}list [<page of list>]`',
+            value=f'`{self.PREFIX}list [<page of list>]`',
             inline=False
         )
         embed.add_field(
@@ -133,7 +168,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value=f'`{self.prefix}search <name/word of emoji>`',
+            value=f'`{self.PREFIX}search <name/word of emoji>`',
             inline=False
         )
         embed.add_field(
@@ -156,7 +191,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value=f'`{self.prefix}info <name of emoji>`',
+            value=f'`{self.PREFIX}info <name of emoji>`',
             inline=False
         )
         embed.add_field(
@@ -174,7 +209,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value=f'`{self.prefix}big <name of emoji>`',
+            value=f'`{self.PREFIX}big <name of emoji>`',
             inline=False
         )
         embed.add_field(
@@ -192,7 +227,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value=f'`{self.prefix}add <name of emoji> <custom emoji> [<is_nsfw? (yes/no)>]`',
+            value=f'`{self.PREFIX}add <name of emoji> <custom emoji> [<is_nsfw? (yes/no)>]`',
             inline=False
         )
         embed.add_field(
@@ -210,7 +245,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value=f'`{self.prefix}add-from-url <name of emoji> <url with image> [<is_nsfw? (yes/no)>]`',
+            value=f'`{self.PREFIX}add-from-url <name of emoji> <url with image> [<is_nsfw? (yes/no)>]`',
             inline=False
         )
         embed.add_field(
@@ -228,7 +263,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Usage',
-            value=f'`{self.prefix}mark-nsfw <name of your emoji>`',
+            value=f'`{self.PREFIX}mark-nsfw <name of your emoji>`',
             inline=False
         )
         embed.add_field(
@@ -246,8 +281,8 @@ class Help(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Help(bot))
-    log.info('Load cog.')
+    log.info('Loaded cog.')
 
 
 def teardown(bot):
-    log.info('Unload cog.')
+    log.info('Unloaded cog.')

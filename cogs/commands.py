@@ -16,6 +16,8 @@ class CogCommands(commands.Cog):
         super().__init__()
         self.bot = bot
         self.db = bot.db
+        self.INVITE_SERVER_URL = cfg['bot']['misc']['invite-server']
+        self.INVITE_BOT_URL = cfg['bot']['misc']['invite-bot']
 
     @commands.command(name='reload', description='Reloads extenstion/cog (requires OWNER_ID)')
     @commands.check(lambda ctx: ctx.author.id in cfg['bot']['supervisors'])
@@ -64,6 +66,14 @@ class CogCommands(commands.Cog):
         )
         await ctx.send(embed=embed)
 
+    @commands.command(name='invite', desciption='Sends Bot Invite link in chat.')
+    async def cmd_invite(self, ctx: commands.Context):
+        await ctx.reply(self.INVITE_BOT_URL, mention_author=False)
+
+    @commands.command(name='support', desciption='Sends Bot Owner\'s Discord Support Server in chat.')
+    async def cmd_support(self, ctx: commands.Context):
+        await ctx.reply(f'Need any help with bot? You can join to support server and ask question.\n{self.INVITE_SERVER_URL}', mention_author=False)
+
     @commands.command(name='statistics', description='Shows an embed with bot statistics', aliases=['stats', 'stat'])
     async def cmd_statistics(self, ctx: commands.Context):
         uptime = datetime.now().timestamp() - self.bot.start_time.timestamp()
@@ -106,9 +116,16 @@ class CogCommands(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(CogCommands(bot))
-    log.info(f'Loaded cog: {__name__}')
+    cog = CogCommands(bot)
+    if not cfg['bot']['misc']['invite-bot']:
+        log.warning('Disabled Invite command due to missing invite link.')
+        cog.cmd_invite.enabled = False
+    if not cfg['bot']['misc']['invite-server']:
+        log.warning('Disabled Support command due to missing invite link.')
+        cog.cmd_support.enabled = False
+    bot.add_cog(cog)
+    log.info('Loaded cog.')
 
 
 def teardown(bot):
-    log.info(f'Unloaded cog: {__name__}')
+    log.info('Unloaded cog.')

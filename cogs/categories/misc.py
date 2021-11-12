@@ -97,8 +97,8 @@ class CogCommandsMisc(commands.Cog):
 
 def setup(bot):
     bot.add_cog(CogCommandsMisc(bot))
-    log.info(f'Loaded cog: {__name__}')
+    log.info('Loaded cog.')
 
 
 def teardown(bot):
-    log.info(f'Unloaded cog: {__name__}')
+    log.info('Unloaded cog.')

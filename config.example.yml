@@ -4,6 +4,9 @@ bot:
   user-agent: "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)"
   supervisors:
     - Discord User ID(s) Integer for Manage Bot
+  misc:
+    invite-bot: "Bot invite link"
+    invite-server: "Discord Support Server invite link"
 
 mysql:
   host: "MySQL Host Address"
