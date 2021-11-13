@@ -35,7 +35,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Emoji Managment',
-            value='`add`, `add-from-url`, `mark-nsfw`, `rename`',
+            value='`add`, `add-from-url`, `mark-nsfw`, `rename`, `delete`',
             inline=False
         )
         embed.set_footer(
