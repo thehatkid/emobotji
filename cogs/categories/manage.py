@@ -99,6 +99,10 @@ class CogCommandsManage(commands.Cog):
                     await reply.edit(content=f':x: Emoji deletion was failed by Discord Error. Please contact to Bot Developer.\n{e}')
                 else:
                     await self.db.execute('DELETE FROM `emojis` WHERE `id` = :id', {'id': emoji.id})
+                    if emoji.animated:
+                        await self.db.execute('UPDATE `guilds` SET `usage_animated` = `usage_animated` - 1 WHERE `guild_id` = :guild_id', {'guild_id': row[2]})
+                    else:
+                        await self.db.execute('UPDATE `guilds` SET `usage_static` = `usage_static` - 1 WHERE `guild_id` = :guild_id', {'guild_id': row[2]})
                     await reply.edit(content=f':white_check_mark: Emoji `{emoji.name}` was deleted from bot!')
             else:
                 await reply.edit(content=':x: Cancelled.', view=None)
