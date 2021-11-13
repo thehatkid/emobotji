@@ -35,7 +35,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Emoji Managment',
-            value='`add`, `add-from-url`, `mark-nsfw`',
+            value='`add`, `add-from-url`, `mark-nsfw`, `rename`',
             inline=False
         )
         embed.set_footer(
@@ -274,6 +274,24 @@ class Help(commands.Cog):
         embed.add_field(
             name='Description',
             value='Marks your uploaded emoji as NSFW, unmarks if already been NSFW marked.',
+            inline=False
+        )
+        await ctx.reply(embed=embed, mention_author=False)
+
+    @help.command(name='rename')
+    async def help_rename(self, ctx: commands.Context):
+        embed = disnake.Embed(
+            title=':information_source: Command: Rename Emoji',
+            colour=disnake.Colour.blurple()
+        )
+        embed.add_field(
+            name='Usage',
+            value=f'`{self.PREFIX}rename <name of your emoji> <new name>`',
+            inline=False
+        )
+        embed.add_field(
+            name='Description',
+            value='Renames your emoji to new name. Useful for fixing typo.',
             inline=False
         )
         await ctx.reply(embed=embed, mention_author=False)

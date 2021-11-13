@@ -4,17 +4,27 @@ import disnake
 VIEW_EMOJIS = {
     # You can put your emoji into this dictonary for using somewhere... :/
     'next': disnake.PartialEmoji(
-        name="page_next",
+        name='page_next',
         animated=False,
         id=870595469536006154
     ),
     'prev': disnake.PartialEmoji(
-        name="page_prev",
+        name='page_prev',
         animated=False,
         id=870595458010058782
     ),
     'close': disnake.PartialEmoji(
-        name="page_close",
+        name='page_close',
+        animated=False,
+        id=870595479505887303
+    ),
+    'checkmark': disnake.PartialEmoji(
+        name='page_accept',
+        animated=False,
+        id=909063192947331082
+    ),
+    'deny': disnake.PartialEmoji(
+        name='page_close',
         animated=False,
         id=870595479505887303
     )
@@ -125,4 +135,45 @@ class ViewPaginator(disnake.ui.View):
             colour=disnake.Colour.dark_red()
         )
         await interaction.response.edit_message(embed=embed, view=None)
+        self.stop()
+
+
+class ViewConfirmation(disnake.ui.View):
+    """Disnake View Confirmation."""
+
+    def __init__(self, author: disnake.User, timeout: int = 15):
+        """
+        Parameters
+        ----------
+        author: :class:`~disnake.User`
+            Discord User object.
+        show_processing: :class:`bool`
+            Edits interaction message to "Processing...".
+        timeout: :class:`int`
+            Timeout seconds.
+        """
+        super().__init__(timeout=timeout)
+        self.author = author
+        self.switch = None
+
+    async def interaction_check(self, interaction: disnake.MessageInteraction):
+        # If Sender's User ID is not equals with User ID from Interaction...
+        if self.author.id != interaction.author.id:
+            # Interaction checks fails
+            await interaction.response.send_message(
+                content=':x: You can\'t press buttons belong command sender.',
+                ephemeral=True
+            )
+            return False
+        # Interaction checks passes
+        return True
+
+    @disnake.ui.button(emoji=VIEW_EMOJIS['deny'], label='Cancel', style=disnake.ButtonStyle.red)
+    async def btn_cancel(self, button: disnake.ui.Button, interaction: disnake.MessageInteraction):
+        self.switch = False
+        self.stop()
+
+    @disnake.ui.button(emoji=VIEW_EMOJIS['checkmark'], label='Accept', style=disnake.ButtonStyle.green)
+    async def btn_accept(self, button: disnake.ui.Button, interaction: disnake.MessageInteraction):
+        self.switch = True
         self.stop()
