@@ -73,6 +73,38 @@ class CogCommandsManage(commands.Cog):
         else:
             await ctx.send(f':x: {emoji_name} was not found in bot\'s servers. Please contact to Bot Developer.')
 
+    @commands.command(name='delete', description='Deletes owner\'s emoji from bot.')
+    async def cmd_rename(self, ctx: commands.Context, emoji_name: str):
+        row = await self.db.fetch_one('SELECT `id`, `author_id`, `guild_id` FROM `emojis` WHERE `name` = :name', {'name': emoji_name})
+        if row is None:
+            return await ctx.reply(f':x: Emoji with name `{emoji_name}` not found in bot.', mention_author=False)
+        if ctx.author.id not in cfg['bot']['supervisors']:
+            if ctx.author.id != row[1]:
+                return await ctx.reply(':x: That\'s not your emoji for deleting it.', mention_author=False)
+
+        guild = self.bot.get_guild(row[2])
+        emoji = await guild.fetch_emoji(row[0])
+
+        if emoji:
+            view = ViewConfirmation(ctx.author)
+            reply = await ctx.send(f'Do you want really delete {emoji}?', view=view)
+            await view.wait()
+            if view.switch is None:
+                await reply.edit(content=':x: Cancelled due to inactivity.', view=None)
+            elif view.switch is True:
+                await reply.edit(content='Deleting...', view=None)
+                try:
+                    await emoji.delete(reason=f'Deleted by {ctx.author.id}')
+                except Exception as e:
+                    await reply.edit(content=f':x: Emoji deletion was failed by Discord Error. Please contact to Bot Developer.\n{e}')
+                else:
+                    await self.db.execute('DELETE FROM `emojis` WHERE `id` = :id', {'id': emoji.id})
+                    await reply.edit(content=f':white_check_mark: Emoji `{emoji.name}` was deleted from bot!')
+            else:
+                await reply.edit(content=':x: Cancelled.', view=None)
+        else:
+            await ctx.send(f':x: {emoji_name} was not found in bot\'s servers. Please contact to Bot Developer.')
+
 
 def setup(bot):
     bot.add_cog(CogCommandsManage(bot))

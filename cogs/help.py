@@ -296,6 +296,24 @@ class Help(commands.Cog):
         )
         await ctx.reply(embed=embed, mention_author=False)
 
+    @help.command(name='delete')
+    async def help_delete(self, ctx: commands.Context):
+        embed = disnake.Embed(
+            title=':information_source: Command: Delete Emoji',
+            colour=disnake.Colour.blurple()
+        )
+        embed.add_field(
+            name='Usage',
+            value=f'`{self.PREFIX}delete <name of your emoji>`',
+            inline=False
+        )
+        embed.add_field(
+            name='Description',
+            value='Deletes your emoji forever from bot.',
+            inline=False
+        )
+        await ctx.reply(embed=embed, mention_author=False)
+
 
 def setup(bot):
     bot.add_cog(Help(bot))
