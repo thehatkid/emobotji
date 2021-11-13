@@ -52,7 +52,7 @@ class CogCommandsManage(commands.Cog):
 
         if emoji:
             view = ViewConfirmation(ctx.author)
-            reply = await ctx.send(f'Do you want really rename to `{emoji_new_name}`?', view=view)
+            reply = await ctx.send(f'Do You really want to rename emoji\'s name to `{emoji_new_name}`?', view=view)
             await view.wait()
             if view.switch is None:
                 await reply.edit(content=':x: Cancelled due to inactivity.', view=None)
@@ -87,7 +87,7 @@ class CogCommandsManage(commands.Cog):
 
         if emoji:
             view = ViewConfirmation(ctx.author)
-            reply = await ctx.send(f'Do you want really delete {emoji}?', view=view)
+            reply = await ctx.send(f'Do You really want to delete {emoji} emoji?', view=view)
             await view.wait()
             if view.switch is None:
                 await reply.edit(content=':x: Cancelled due to inactivity.', view=None)
