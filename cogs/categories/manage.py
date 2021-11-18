@@ -74,7 +74,7 @@ class CogCommandsManage(commands.Cog):
             await ctx.send(f':x: {emoji_name} was not found in bot\'s servers. Please contact to Bot Developer.')
 
     @commands.command(name='delete', description='Deletes owner\'s emoji from bot.')
-    async def cmd_rename(self, ctx: commands.Context, emoji_name: str):
+    async def cmd_delete(self, ctx: commands.Context, emoji_name: str):
         row = await self.db.fetch_one('SELECT `id`, `author_id`, `guild_id` FROM `emojis` WHERE `name` = :name', {'name': emoji_name})
         if row is None:
             return await ctx.reply(f':x: Emoji with name `{emoji_name}` not found in bot.', mention_author=False)
