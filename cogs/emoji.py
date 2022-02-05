@@ -14,7 +14,7 @@ class Emoji(commands.Cog):
         self.bot = bot
         self.db = bot.db
         self.replies = {}
-        self.REGEX = re.compile(r'(?!<:)<?(;|:)([\w_]{2,32})(?!:\d+>)\1(?:\d+>)?', re.ASCII)
+        self.REGEX = re.compile(r'(?!<:)<?(;|:)([\w_]{2,32})(?!:\d+>)\1(?:\d+>)?(\n?)', re.ASCII)
 
     @commands.Cog.listener()
     async def on_message(self, message: disnake.Message):
@@ -79,11 +79,18 @@ class Emoji(commands.Cog):
             String with emojis for message.
             If not found returns :class:`None`
         """
+        inputs = [match.groups()[1:] for match in self.REGEX.finditer(message)]
+        if not inputs:
+            return None
+
         emojis = []
-        for match in self.REGEX.finditer(message):
-            emojis.append(await self.emoji_get(match.group(2), nsfw))
+        for name, newline in inputs:
+            emojis.append(await self.emoji_get(name, nsfw))
+            if newline:
+                emojis.append('\n')
         if not emojis:
             return None
+
         return ''.join(emojis)
 
     async def emoji_get(self, name: str, nsfw: bool) -> str:
