@@ -1,6 +1,9 @@
 from datetime import datetime
 import logging
 import yaml
+import os
+import psutil
+from utils import human_readable_size
 import disnake
 from disnake.ext import commands
 
@@ -81,7 +84,8 @@ class CogCommands(commands.Cog):
         time_h = int(uptime) / 3600 - int(time_d) * 24
         time_min = int(uptime) / 60 - int(time_h) * 60 - int(time_d) * 24 * 60
         time_sec = int(uptime) - int(time_min) * 60 - int(time_h) * 3600 - int(time_d) * 24 * 60 * 60
-        uptime_str = '%01d days, %02d hours, %02d minutes, %02d seconds' % (time_d, time_h, time_min, time_sec)
+        uptime_str = '%01d days, %02d hours, %02d minutes and %02d seconds' % (time_d, time_h, time_min, time_sec)
+
         emojis = await self.db.fetch_one("""
         SELECT (
             SELECT COUNT(*) FROM `emojis`
@@ -93,26 +97,70 @@ class CogCommands(commands.Cog):
             SELECT COUNT(*) FROM `emojis` WHERE `nsfw` = 1
         ) AS emojis_total_nsfw
         """)
+
+        process = psutil.Process(os.getpid())
+        cpu_percent = psutil.cpu_percent()
+        ram = psutil.virtual_memory()
+        ram_used = human_readable_size(ram.used)
+        ram_total = human_readable_size(ram.total)
+        ram_available = human_readable_size(ram.available)
         total_guilds = len(self.bot.guilds)
         total_users = 0
         for guild in self.bot.guilds:
             total_users += guild.member_count
 
-        embed = disnake.Embed(title=':information_source: Bot Statistics', colour=disnake.Colour.blurple())
-        embed.add_field(name=':hourglass: Bot uptime',value=uptime_str, inline=False)
+        embed = disnake.Embed(
+            title=':information_source: Bot statistics',
+            color=disnake.Color.blurple()
+        )
+
         embed.add_field(
-            name=':hourglass: Bot started since',
-            value='<t:{0}:R>'.format(int(self.bot.start_time.timestamp())),
+            name=':clock1: Bot Uptime',
+            value=f'{uptime_str} (<t:{int(self.bot.start_time.timestamp())}:R>)',
             inline=False
         )
-        embed.add_field(name=':bar_chart: Servers joined', value=total_guilds, inline=False)
-        embed.add_field(name=':bar_chart: Total users in servers', value=total_users, inline=False)
+        embed.add_field(
+            name=':page_facing_up: Process PID',
+            value=process.pid,
+            inline=True
+        )
+        embed.add_field(
+            name=':control_knobs: CPU Usage',
+            value=f'{cpu_percent}%',
+            inline=True
+        )
+        embed.add_field(
+            name=':file_cabinet: Bot RAM Usage',
+            value=human_readable_size(process.memory_info().rss),
+            inline=True
+        )
+        embed.add_field(
+            name=':file_cabinet: Total RAM',
+            value=f'Using: {ram_used} ({ram.percent}%) / {ram_total}\nAvailable: {ram_available} ({ram.available * 100 / ram.total:.1f}%)',
+            inline=False
+        )
         embed.add_field(
             name=':bar_chart: Total emojis',
             value='{0} emojis *({1} SFW, {2} NSFW)*'.format(emojis[0], emojis[1], emojis[2]),
             inline=False
         )
-        await ctx.send(embed=embed)
+        embed.add_field(
+            name=':signal_strength: Ping latency',
+            value=f'{round(self.bot.latency * 1000)}ms',
+            inline=True
+        )
+        embed.add_field(
+            name=':homes: Servers joined',
+            value=f'{total_guilds} servers',
+            inline=True
+        )
+        embed.add_field(
+            name=':busts_in_silhouette: Total users in servers',
+            value=f'{total_users} users',
+            inline=True
+        )
+
+        await ctx.reply(embed=embed, mention_author=False)
 
 
 def setup(bot):
