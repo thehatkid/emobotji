@@ -1,7 +1,7 @@
 import logging
 import yaml
 from datetime import datetime
-from databases import Database
+from utils.database import Database
 import disnake
 from disnake.ext import commands
 
@@ -39,13 +39,11 @@ bot = commands.Bot(
 )
 # Connect MySQL Database
 bot.db = Database(
-    'mysql://{0}:{1}@{2}:{3}/{4}'.format(
-        cfg['mysql']['user'],
-        cfg['mysql']['password'],
-        cfg['mysql']['host'],
-        cfg['mysql']['port'],
-        cfg['mysql']['database']
-    )
+    host=cfg['mysql']['host'],
+    port=cfg['mysql']['port'],
+    user=cfg['mysql']['user'],
+    password=cfg['mysql']['password'],
+    database=cfg['mysql']['database']
 )
 # Bot start time for uptime stats
 bot.start_time = datetime.now()
