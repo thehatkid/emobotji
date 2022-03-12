@@ -293,3 +293,88 @@ class Database:
         await self.conn.commit()
 
         return True
+
+    async def rename_emoji(self, emoji_id: int, new_name: str) -> bool:
+        """Renames emoji to new name.
+
+        Parameters:
+        -----------
+        emoji_id: :class:`int`
+            The emoji ID in database to rename.
+        new_name: :class:`str`
+            The new name of emoji.
+
+        Returns:
+        --------
+        :class:`bool` `True` if successful otherwise raise exception.
+        """
+
+        if self.conn is None:
+            raise exceptions.DatabaseNotConnected
+
+        async with self.conn.cursor() as cursor:
+            await cursor.execute(
+                'UPDATE `emojis` SET `name` = %s WHERE `id` = %s',
+                (new_name, emoji_id,)
+            )
+
+        # commit changes to database
+        await self.conn.commit()
+
+        return True
+
+    async def delete_emoji(self, emoji_id: int) -> bool:
+        """Deletes emoji from database irrevocably.
+
+        Parameters:
+        -----------
+        emoji_id: :class:`int`
+            The emoji ID in database to delete.
+
+        Returns:
+        --------
+        :class:`bool` `True` if successful otherwise raise exception.
+        """
+
+        if self.conn is None:
+            raise exceptions.DatabaseNotConnected
+
+        async with self.conn.cursor() as cursor:
+            await cursor.execute(
+                'DELETE FROM `emojis` WHERE `id` = %s',
+                (emoji_id,)
+            )
+
+        # commit changes to database
+        await self.conn.commit()
+
+        return True
+
+    async def set_nsfw_mark(self, emoji_id: int, nsfw: bool) -> bool:
+        """Marks or unmarks emoji as NSFW-only usage.
+
+        Parameters:
+        -----------
+        emoji_id: :class:`int`
+            The emoji ID in database to mark/unmark as NSFW-only.
+        nsfw: :class:`bool`
+            Whether the emoji is NSFW or not.
+
+        Returns:
+        --------
+        :class:`bool` `True` if successful otherwise raise exception.
+        """
+
+        if self.conn is None:
+            raise exceptions.DatabaseNotConnected
+
+        async with self.conn.cursor() as cursor:
+            await cursor.execute(
+                'UPDATE `emojis` SET `nsfw` = %s WHERE `id` = %s',
+                (nsfw, emoji_id,)
+            )
+
+        # commit changes to database
+        await self.conn.commit()
+
+        return True
