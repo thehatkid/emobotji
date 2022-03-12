@@ -239,6 +239,70 @@ class Database:
 
         return True
 
+    async def get_emoji_list(self, nsfw: bool = False) -> list[tuple]:
+        """Retrives emoji list from database.
+
+        Parameters:
+        -----------
+        nsfw: :class:`int`
+            Whether retrive NSFW emojis too or not.
+
+        Returns:
+        --------
+        :class:`list` with :class:`tuple` of emoji.
+        """
+
+        if self.conn is None:
+            raise exceptions.DatabaseNotConnected
+
+        async with self.conn.cursor() as cursor:
+            if nsfw:
+                await cursor.execute(
+                    'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` ORDER BY `name` ASC'
+                )
+            else:
+                await cursor.execute(
+                    'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `nsfw` = 0 ORDER BY `name` ASC'
+                )
+
+            rows = await cursor.fetchall()
+
+        return rows
+
+    async def get_emoji_list_by_name(self, name: str, nsfw: bool = False) -> list[tuple]:
+        """Retrives emoji list by name from database.
+
+        Parameters:
+        -----------
+        name: :class:`str`
+            Name for search emojis by name.
+        nsfw: :class:`int`
+            Whether retrive NSFW emojis too or not.
+
+        Returns:
+        --------
+        :class:`list` with :class:`tuple` of emoji.
+        """
+
+        if self.conn is None:
+            raise exceptions.DatabaseNotConnected
+
+        async with self.conn.cursor() as cursor:
+            if nsfw:
+                await cursor.execute(
+                    'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE %s ORDER BY `name` ASC',
+                    (f'%{name}%',)
+                )
+            else:
+                await cursor.execute(
+                    'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE %s AND `nsfw` = 0 ORDER BY `name` ASC',
+                    (f'%{name}%',)
+                )
+
+            rows = await cursor.fetchall()
+
+        return rows
+
     async def add_emoji(
         self,
         emoji_id: int,

@@ -1,8 +1,9 @@
 import logging
 from math import ceil
+from utils.database import Database
+from utils.views import ViewPaginator
 import disnake
 from disnake.ext import commands
-from utils.views import ViewPaginator
 
 
 log = logging.getLogger(__name__)
@@ -14,7 +15,7 @@ class CogCommandsListing(commands.Cog):
     def __init__(self, bot: commands.Bot):
         super().__init__()
         self.bot = bot
-        self.db = bot.db
+        self.db: Database = bot.db
 
     @commands.command(name='list', description='Shows an embed with emoji list')
     async def cmd_list(self, ctx: commands.Context, page: int = 1):
@@ -24,9 +25,9 @@ class CogCommandsListing(commands.Cog):
             NSFW = True if ctx.channel.is_nsfw() else False
 
         if NSFW:
-            EMOJI_LIST = await self.db.fetch_all('SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` ORDER BY `name` ASC')
+            EMOJI_LIST = await self.db.get_emoji_list(True)
         else:
-            EMOJI_LIST = await self.db.fetch_all('SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `nsfw` = 0 ORDER BY `name` ASC')
+            EMOJI_LIST = await self.db.get_emoji_list(False)
 
         if len(EMOJI_LIST) == 0:
             return await ctx.reply(':x: Bot not have any emojis.', mention_author=False)
@@ -68,15 +69,9 @@ class CogCommandsListing(commands.Cog):
             NSFW = True if ctx.channel.is_nsfw() else False
 
         if NSFW:
-            EMOJI_LIST = await self.db.fetch_all(
-                'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE :name ORDER BY `name` ASC',
-                {'name': f'%{name}%'}
-            )
+            EMOJI_LIST = await self.db.get_emoji_list_by_name(name, True)
         else:
-            EMOJI_LIST = await self.db.fetch_all(
-                'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE :name AND `nsfw` = 0 ORDER BY `name` ASC',
-                {'name': f'%{name}%'}
-            )
+            EMOJI_LIST = await self.db.get_emoji_list_by_name(name, False)
 
         if len(EMOJI_LIST) == 0:
             return await ctx.reply(f':x: Emoji with name/word `{name}` not exists or not found.', mention_author=False)
