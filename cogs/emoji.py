@@ -1,8 +1,8 @@
 import logging
 import re
+from utils.database import Database
 import disnake
 from disnake.ext import commands
-
 
 log = logging.getLogger(__name__)
 
@@ -12,7 +12,7 @@ class Emoji(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.db = bot.db
+        self.db: Database = bot.db
         self.replies = {}
         self.REGEX = re.compile(r'(?!<:)<?(;|:)([\w_]{2,32})(?!:\d+>)\1(?:\d+>)?(\n?)', re.ASCII)
 
@@ -85,46 +85,16 @@ class Emoji(commands.Cog):
 
         emojis = []
         for name, newline in inputs:
-            emojis.append(await self.emoji_get(name, nsfw))
+            emoji = await self.db.get_formatted_emoji(name, nsfw)
+            if emoji is None:
+                emoji = ''
+            emojis.append(emoji)
             if newline:
                 emojis.append('\n')
         if not emojis:
             return None
 
         return ''.join(emojis)
-
-    async def emoji_get(self, name: str, nsfw: bool) -> str:
-        """
-        Getting a emoji from Database and returns formatted emoji for Discord message if was been found.
-
-        Parameters:
-        -----------
-        name: :class:`str`
-            Name of emoji to get and format it.
-        nsfw: :class:`bool`
-            If True will return SFW and NSFW emoji, otherwise only SFW.
-
-        Returns:
-        --------
-        :class:`str`
-            String of formatted emoji for message:
-                `<a:emoji_name:emoji_id>` (animated emoji)
-
-                or
-
-                `<:emoji_name:emoji_id>` (not animated emoji)
-
-            If not found or emoji are NSFW but parameter `nsfw` are False returns nothing (empty string)
-        """
-        row = await self.db.fetch_one(
-            'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` = :name',
-            values={'name': name}
-        )
-        if row:
-            if nsfw is False and row[3] == 1:
-                return ''
-            return '<{0}:{1}:{2}>'.format('a' if row[2] else '', row[1], row[0])
-        return ''
 
 
 def setup(bot):

@@ -1,12 +1,12 @@
-from datetime import datetime
 import logging
 import yaml
 import os
 import psutil
+from datetime import datetime
 from utils import human_readable_size
+from utils.database import Database
 import disnake
 from disnake.ext import commands
-
 
 log = logging.getLogger(__name__)
 cfg = yaml.safe_load(open('config.yml', 'r'))
@@ -16,9 +16,8 @@ class CogCommands(commands.Cog):
     """Commands cog for Discord Bot."""
 
     def __init__(self, bot: commands.Bot):
-        super().__init__()
         self.bot = bot
-        self.db = bot.db
+        self.db: Database = bot.db
         self.INVITE_SERVER_URL = cfg['bot']['misc']['invite-server']
         self.INVITE_BOT_URL = cfg['bot']['misc']['invite-bot']
 
@@ -85,19 +84,7 @@ class CogCommands(commands.Cog):
         time_min = int(uptime) / 60 - int(time_h) * 60 - int(time_d) * 24 * 60
         time_sec = int(uptime) - int(time_min) * 60 - int(time_h) * 3600 - int(time_d) * 24 * 60 * 60
         uptime_str = '%01d days, %02d hours, %02d minutes and %02d seconds' % (time_d, time_h, time_min, time_sec)
-
-        emojis = await self.db.fetch_one("""
-        SELECT (
-            SELECT COUNT(*) FROM `emojis`
-        ) AS emojis_total,
-        (
-            SELECT COUNT(*) FROM `emojis` WHERE `nsfw` = 0
-        ) AS emojis_total_sfw,
-        (
-            SELECT COUNT(*) FROM `emojis` WHERE `nsfw` = 1
-        ) AS emojis_total_nsfw
-        """)
-
+        emojis = await self.db.get_emojis_counts()
         process = psutil.Process(os.getpid())
         cpu_percent = psutil.cpu_percent()
         ram = psutil.virtual_memory()
@@ -141,7 +128,9 @@ class CogCommands(commands.Cog):
         )
         embed.add_field(
             name=':bar_chart: Total emojis',
-            value='{0} emojis *({1} SFW, {2} NSFW)*'.format(emojis[0], emojis[1], emojis[2]),
+            value='{0} emojis *({1} SFW, {2} NSFW)*'.format(
+                emojis['total'], emojis['total_sfw'], emojis['total_nsfw']
+            ),
             inline=False
         )
         embed.add_field(

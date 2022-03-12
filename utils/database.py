@@ -110,3 +110,30 @@ class Database:
                 )
         else:
             return None
+
+    async def get_emojis_counts(self) -> dict:
+        """Fetch emoji total count in database.
+
+        Returns :class:`dict` with emoji total count.
+        """
+
+        if self.conn is None:
+            raise exceptions.DatabaseNotConnected
+
+        async with self.conn.cursor() as cursor:
+            await cursor.execute("""
+            SELECT (
+                SELECT COUNT(*) FROM `emojis`
+            ) AS emojis_total, (
+                SELECT COUNT(*) FROM `emojis` WHERE `nsfw` = 0
+            ) AS emojis_total_sfw, (
+                SELECT COUNT(*) FROM `emojis` WHERE `nsfw` = 1
+            ) AS emojis_total_nsfw
+            """)
+            row = await cursor.fetchone()
+
+            return {
+                'total': row[0],
+                'total_sfw': row[1],
+                'total_nsfw': row[2]
+            }
