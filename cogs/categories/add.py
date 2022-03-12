@@ -1,9 +1,10 @@
-import asyncio
-from datetime import datetime
 import logging
+import asyncio
 import yaml
 import re
 import aiohttp
+from datetime import datetime
+from utils.database import Database
 import disnake
 from disnake.ext import commands
 
@@ -18,7 +19,7 @@ class CogCommandsAdd(commands.Cog):
     def __init__(self, bot: commands.Bot):
         super().__init__()
         self.bot = bot
-        self.db = bot.db
+        self.db: Database = bot.db
         self.http = aiohttp.ClientSession(
             loop=bot.loop, read_timeout=10,
             headers={'User-Agent': cfg['bot']['user-agent']}
@@ -38,7 +39,7 @@ class CogCommandsAdd(commands.Cog):
     async def cmd_add(self, ctx: commands.Context, name: str, emoji: str, nsfw: str = '0'):
         if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
             return await ctx.reply(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores.', mention_author=False)
-        if await self.db.fetch_one('SELECT `name` FROM `emojis` WHERE `name` = :name', {'name': name}):
+        if await self.db.get_emoji(name):
             return await ctx.reply(f':x: `{name}` is already taken, try other name.', mention_author=False)
 
         NSFW = True if nsfw in ['is-nsfw', 'is_nsfw', 'isnsfw', 'nsfw', '1', 'yes', 'yeah', 'y', 'true', '18+'] else False
@@ -52,12 +53,12 @@ class CogCommandsAdd(commands.Cog):
             image = await response.read()
 
         if animated:
-            guild = await self.db.fetch_one('SELECT `guild_id` FROM `guilds` WHERE `usage_animated` < 50 ORDER BY `number` ASC LIMIT 1')
+            guild_id = await self.db.get_available_guild('animated')
         else:
-            guild = await self.db.fetch_one('SELECT `guild_id` FROM `guilds` WHERE `usage_static` < 50 ORDER BY `number` ASC LIMIT 1')
-        if guild is None:
+            guild_id = await self.db.get_available_guild('static')
+        if guild_id is None:
             return await ctx.reply(':x: Emoji was not uploaded: `NO_FREE_AVAILABLE_GUILDS`', mention_author=False)
-        guild = self.bot.get_guild(guild[0])
+        guild = self.bot.get_guild(guild_id)
 
         try:
             result = await guild.create_custom_emoji(name=name, image=image, reason=f'Addition Requested by {ctx.author.id}')
@@ -67,14 +68,11 @@ class CogCommandsAdd(commands.Cog):
             else:
                 await ctx.reply(f':x: Emoji was not added to bot.\n`{e}`', mention_author=False)
         else:
-            await self.db.execute(
-                'INSERT INTO `emojis` (`id`, `name`, `animated`, `nsfw`, `created`, `author_id`, `guild_id`) VALUES (:id, :name, :animated, :nsfw, :created, :author_id, :guild_id)',
-                {'id': result.id, 'name': result.name, 'animated': result.animated, 'nsfw': NSFW, 'created': datetime.utcnow(), 'author_id': ctx.author.id, 'guild_id': guild.id}
-            )
+            await self.db.add_emoji(result.id, result.name, result.animated, NSFW, datetime.utcnow(), ctx.author.id, guild.id)
             if animated:
-                await self.db.execute('UPDATE `guilds` SET `usage_animated` = `usage_animated` + 1 WHERE `guild_id` = :guild_id', {'guild_id': guild.id})
+                await self.db.increase_usage_guild(guild.id, 'animated')
             else:
-                await self.db.execute('UPDATE `guilds` SET `usage_static` = `usage_static` + 1 WHERE `guild_id` = :guild_id', {'guild_id': guild.id})
+                await self.db.increase_usage_guild(guild.id, 'static')
             if NSFW:
                 await ctx.reply(f':white_check_mark: Emoji {result} was added to bot and **marked as NSFW** only usage.', mention_author=False)
             else:
@@ -84,7 +82,7 @@ class CogCommandsAdd(commands.Cog):
     async def cmd_addfromurl(self, ctx: commands.Context, name: str, url: str, nsfw: str = '0'):
         if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
             return await ctx.reply(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores.', mention_author=False)
-        if await self.db.fetch_one('SELECT `name` FROM `emojis` WHERE `name` = :name', {'name': name}):
+        if await self.db.get_emoji(name):
             return await ctx.reply(f':x: `{name}` is already taken, try other name.', mention_author=False)
 
         NSFW = True if nsfw in ['is-nsfw', 'is_nsfw', 'isnsfw', 'nsfw', '1', 'yes', 'yeah', 'y', 'true', '18+'] else False
@@ -106,12 +104,12 @@ class CogCommandsAdd(commands.Cog):
             return await ctx.reply(f':x: Exception while downloading image from URL.\n`{e}`', mention_author=False)
 
         if animated:
-            row = await self.db.fetch_one('SELECT `guild_id` FROM `guilds` WHERE `usage_animated` < 50 ORDER BY `number` LIMIT 1')
+            guild_id = await self.db.get_available_guild('animated')
         else:
-            row = await self.db.fetch_one('SELECT `guild_id` FROM `guilds` WHERE `usage_static` < 50 ORDER BY `number` LIMIT 1')
-        if row is None:
+            guild_id = await self.db.get_available_guild('static')
+        if guild_id is None:
             return await ctx.reply(':x: Emoji was not uploaded: `NO_AVAILABLE_GUILDS`', mention_author=False)
-        guild = self.bot.get_guild(row[0])
+        guild = self.bot.get_guild(guild_id)
 
         try:
             result = await guild.create_custom_emoji(name=name, image=image, reason=f'Addition Requested by {ctx.author.id}')
@@ -121,14 +119,11 @@ class CogCommandsAdd(commands.Cog):
             else:
                 await ctx.reply(f':x: Emoji was not added to bot.\n`{e}`', mention_author=False)
         else:
-            await self.db.execute(
-                'INSERT INTO `emojis` (`id`, `name`, `animated`, `nsfw`, `created`, `author_id`, `guild_id`) VALUES (:id, :name, :animated, :nsfw, :created, :author_id, :guild_id)',
-                {'id': result.id, 'name': result.name, 'animated': result.animated, 'nsfw': NSFW, 'created': datetime.utcnow(), 'author_id': ctx.author.id, 'guild_id': guild.id}
-            )
+            await self.db.add_emoji(result.id, result.name, result.animated, NSFW, datetime.utcnow(), ctx.author.id, guild.id)
             if animated:
-                await self.db.execute('UPDATE `guilds` SET `usage_animated` = `usage_animated` + 1 WHERE `guild_id` = :guild_id', {'guild_id': guild.id})
+                await self.db.increase_usage_guild(guild.id, 'animated')
             else:
-                await self.db.execute('UPDATE `guilds` SET `usage_static` = `usage_static` + 1 WHERE `guild_id` = :guild_id', {'guild_id': guild.id})
+                await self.db.increase_usage_guild(guild.id, 'static')
             if NSFW:
                 await ctx.send(f':white_check_mark: Emoji {result} was added to bot and **marked as NSFW** only usage.', mention_author=False)
             else:

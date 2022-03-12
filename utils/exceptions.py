@@ -16,3 +16,13 @@ class DatabaseNotConnected(Exception):
 
     def __str__(self):
         return 'Database is not connected'
+
+
+class UnknownType(Exception):
+    """Raised when the database is not connected."""
+
+    def __init__(self, which: str):
+        self.which = which
+
+    def __str__(self):
+        return f'Unknown "{self.which}"'
