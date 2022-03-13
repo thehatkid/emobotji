@@ -44,7 +44,7 @@ class Database:
             logger.info('Successfully connected to database')
 
     async def disconnect(self) -> None:
-        """Disconnects database."""
+        """Graceful disconnects database."""
 
         if self.conn is None:
             raise exceptions.DatabaseNotConnected
@@ -55,9 +55,19 @@ class Database:
         logger.info('Disconnected from database')
 
     async def get_emoji(self, name: str) -> dict:
-        """Fetch full emoji entry by name from database.
+        """Retrieves full emoji entry by name from database.
 
-        Returns :class:`dict` if was found otherwise :class:`None`.
+        Parameters:
+        -----------
+        name: :class:`str`
+            The emoji name to retrieve.
+
+        Returns:
+        --------
+        :class:`dict`
+            The dictionary with emoji entry.
+        :class:`None`
+            Emoji with given name was not found in database.
         """
 
         if self.conn is None:
@@ -78,16 +88,31 @@ class Database:
             'name': row[1],
             'animated': True if row[2] else False,
             'nsfw': True if row[3] else False,
+            'formatted': '<{0}:{1}:{2}>'.format(
+                'a' if row[2] else '', row[1], row[0]
+            ),
             'created_at': row[4],
             'author_id': row[5],
             'guild_id': row[6]
         }
 
     async def get_formatted_emoji(self, name: str, nsfw: bool = False) -> str:
-        """Fetch formatted emoji only by name from database.
-        Useful for apply in Discord message.
+        """Retrieves formatted emoji for Discord messages.
 
-        Returns :class:`str` if was found otherwise :class:`None`.
+        Parameters:
+        -----------
+        name: :class:`str`
+            The emoji name to retrieve.
+        nsfw: :class:`bool`
+            Whether return NSFW emoji or not.
+
+        Returns:
+        --------
+        :class:`str`
+            The formatted emoji for Discord message.
+        :class:`None`
+            Emoji with given name was not found in database
+            or is NSFW-only usage.
         """
 
         if self.conn is None:
@@ -107,15 +132,18 @@ class Database:
             return None
 
         return '<{0}:{1}:{2}>'.format(
-            'a' if row[2] else '',
-            row[1],
-            row[0]
+            'a' if row[2] else '', row[1], row[0]
         )
 
     async def get_emojis_counts(self) -> dict:
-        """Fetch emoji total count in database.
+        """Retrieves total emoji count of static and animated usage
+        in database.
 
-        Returns :class:`dict` with emoji total count.
+        Returns:
+        --------
+        :class:`dict`
+            The counts
+            The dictionary with emoji usage counts.
         """
 
         if self.conn is None:
@@ -140,18 +168,19 @@ class Database:
             }
 
     async def get_available_guild(self, which: str) -> int:
-        """Returns available, not full Guild ID for emoji uploading.
+        """Retrieves available (not full) Guild ID for emoji addiction.
 
         Parameters:
         -----------
-        which: :class:`str`
-            Type of emoji to get guild: `static`, `animated`.
+        which: :class:`bool`
+            Whether `static` or `animated` for retrieving guild by type.
 
         Returns:
         --------
-        :class:`int` of available, not full Guild ID for emoji uploading.
-
-        :class:`None` if there's no available free guilds for uploading.
+        :class:`int`
+            The Guild ID of available guild.
+        :class:`None`
+            No available free guilds for addiction.
         """
 
         if self.conn is None:
@@ -240,16 +269,17 @@ class Database:
         return True
 
     async def get_emoji_list(self, nsfw: bool = False) -> list[tuple]:
-        """Retrives emoji list from database.
+        """Retrieves emoji list from database.
 
         Parameters:
         -----------
         nsfw: :class:`int`
-            Whether retrive NSFW emojis too or not.
+            Whether also retrieve NSFW emojis or not.
 
         Returns:
         --------
-        :class:`list` with :class:`tuple` of emoji.
+        List[:class:`tuple`]
+            The emoji entry from database.
         """
 
         if self.conn is None:
@@ -270,18 +300,19 @@ class Database:
         return rows
 
     async def get_emoji_list_by_name(self, name: str, nsfw: bool = False) -> list[tuple]:
-        """Retrives emoji list by name from database.
+        """Retrieves emoji list by name from database.
 
         Parameters:
         -----------
         name: :class:`str`
             Name for search emojis by name.
         nsfw: :class:`int`
-            Whether retrive NSFW emojis too or not.
+            Whether also retrieve NSFW emojis or not.
 
         Returns:
         --------
-        :class:`list` with :class:`tuple` of emoji.
+        List[:class:`tuple`]
+            The emoji entry from database.
         """
 
         if self.conn is None:
@@ -331,10 +362,6 @@ class Database:
             Discord Author ID for emoji owner.
         guild_id: :class:`int`
             The Guild ID determines in which guild was created emoji.
-
-        Returns:
-        --------
-        :class:`bool` `True` if successful otherwise raise exception.
         """
 
         if self.conn is None:
@@ -367,10 +394,6 @@ class Database:
             The emoji ID in database to rename.
         new_name: :class:`str`
             The new name of emoji.
-
-        Returns:
-        --------
-        :class:`bool` `True` if successful otherwise raise exception.
         """
 
         if self.conn is None:
@@ -394,10 +417,6 @@ class Database:
         -----------
         emoji_id: :class:`int`
             The emoji ID in database to delete.
-
-        Returns:
-        --------
-        :class:`bool` `True` if successful otherwise raise exception.
         """
 
         if self.conn is None:
@@ -423,10 +442,6 @@ class Database:
             The emoji ID in database to mark/unmark as NSFW-only.
         nsfw: :class:`bool`
             Whether the emoji is NSFW or not.
-
-        Returns:
-        --------
-        :class:`bool` `True` if successful otherwise raise exception.
         """
 
         if self.conn is None:
