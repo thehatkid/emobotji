@@ -1,9 +1,10 @@
 # Emobotji
-[![Python 3.8 and higher](https://img.shields.io/badge/python->=3.8-4B8BBE.svg)](https://www.python.org/)
-[![disnake](https://img.shields.io/badge/disnake-2.2.1-5865F2.svg)](https://github.com/Rapptz/discord.py/tree/master)
-[![codefactor.io](https://www.codefactor.io/repository/github/thehatkid/emobotji/badge)](https://www.codefactor.io/repository/github/thehatkid/emobotji/)
-[![hat_kid's Server](https://img.shields.io/discord/848266125833273384.svg?logo=discord&colorB=5865F2&label=hat_kid%27s%20Server)](https://discord.gg/Y7EtGn6bH3)
-[![Emobotji on top.gg](https://top.gg/api/widget/servers/841879090038177792.svg)](https://top.gg/bot/841879090038177792)
+<p align="center">
+    <a href="https://pypi.org/project/disnake/"><img src="https://img.shields.io/badge/library-Disnake-5865F2.svg?style=flat-square" alt="Python Discord Library (Disnake)" /></a>
+    <a href="https://www.codefactor.io/repository/github/thehatkid/emobotji/"><img src="https://www.codefactor.io/repository/github/thehatkid/emobotji/badge?style=flat-square" alt="CodeFactor Code Quality" /></a>
+    <a href="https://github.com/thehatkid/emobotji/commits"><img src="https://img.shields.io/github/commit-activity/m/thehatkid/emobotji.svg?style=flat-square" alt="Commit Activity per Month" /></a>
+    <a href="https://top.gg/bot/841879090038177792"><img src="https://top.gg/api/widget/servers/841879090038177792.svg" alt="Emobotji on top.gg" /></a>
+</p>
 
 A **Text-to-Emoji** Bot for Discord.
 
