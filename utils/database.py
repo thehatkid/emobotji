@@ -18,7 +18,7 @@ class Database:
         password: str = None,
         database: str = None
     ) -> None:
-        self.conn: aiomysql.Connection = None
+        self.pool: aiomysql.Pool = None
         self.user = user
         self.password = password
         self.database = database
@@ -28,12 +28,13 @@ class Database:
     async def connect(self) -> None:
         """Connects database for further using."""
 
-        if self.conn is not None:
+        if self.pool is not None:
             raise exceptions.DatabaseAlreadyConnected
 
         try:
-            self.conn = await aiomysql.connect(
+            self.pool = await aiomysql.create_pool(
                 host=self.host,
+                port=self.port,
                 user=self.user,
                 password=self.password,
                 db=self.database
@@ -46,11 +47,13 @@ class Database:
     async def disconnect(self) -> None:
         """Graceful disconnects database."""
 
-        if self.conn is None:
+        if self.pool is None:
             raise exceptions.DatabaseNotConnected
 
-        await self.conn.ensure_closed()
-        self.conn = None
+        await self.pool.close()
+        await self.pool.wait_closed()
+
+        self.pool = None
 
         logger.info('Disconnected from database')
 
@@ -70,15 +73,16 @@ class Database:
             Emoji with given name was not found in database.
         """
 
-        if self.conn is None:
+        if self.pool is None:
             raise exceptions.DatabaseNotConnected
 
-        async with self.conn.cursor() as cursor:
-            await cursor.execute(
-                'SELECT * FROM `emojis` WHERE `name` = %s',
-                (name,)
-            )
-            row = await cursor.fetchone()
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute(
+                    'SELECT * FROM `emojis` WHERE `name` = %s',
+                    (name,)
+                )
+                row = await cursor.fetchone()
 
         if row is None:
             return None
@@ -115,15 +119,16 @@ class Database:
             or is NSFW-only usage.
         """
 
-        if self.conn is None:
+        if self.pool is None:
             raise exceptions.DatabaseNotConnected
 
-        async with self.conn.cursor() as cursor:
-            await cursor.execute(
-                'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` = %s',
-                (name,)
-            )
-            row = await cursor.fetchone()
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute(
+                    'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` = %s',
+                    (name,)
+                )
+                row = await cursor.fetchone()
 
         if row is None:
             return None
@@ -146,26 +151,27 @@ class Database:
             The dictionary with emoji usage counts.
         """
 
-        if self.conn is None:
+        if self.pool is None:
             raise exceptions.DatabaseNotConnected
 
-        async with self.conn.cursor() as cursor:
-            await cursor.execute("""
-            SELECT (
-                SELECT COUNT(*) FROM `emojis`
-            ) AS emojis_total, (
-                SELECT COUNT(*) FROM `emojis` WHERE `nsfw` = 0
-            ) AS emojis_total_sfw, (
-                SELECT COUNT(*) FROM `emojis` WHERE `nsfw` = 1
-            ) AS emojis_total_nsfw
-            """)
-            row = await cursor.fetchone()
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute("""
+                SELECT (
+                    SELECT COUNT(*) FROM `emojis`
+                ) AS emojis_total, (
+                    SELECT COUNT(*) FROM `emojis` WHERE `nsfw` = 0
+                ) AS emojis_total_sfw, (
+                    SELECT COUNT(*) FROM `emojis` WHERE `nsfw` = 1
+                ) AS emojis_total_nsfw
+                """)
+                row = await cursor.fetchone()
 
-            return {
-                'total': row[0],
-                'total_sfw': row[1],
-                'total_nsfw': row[2]
-            }
+                return {
+                    'total': row[0],
+                    'total_sfw': row[1],
+                    'total_nsfw': row[2]
+                }
 
     async def get_available_guild(self, which: str) -> int:
         """Retrieves available (not full) Guild ID for emoji addiction.
@@ -183,22 +189,23 @@ class Database:
             No available free guilds for addiction.
         """
 
-        if self.conn is None:
+        if self.pool is None:
             raise exceptions.DatabaseNotConnected
 
-        async with self.conn.cursor() as cursor:
-            if which == 'static':
-                await cursor.execute(
-                    'SELECT `guild_id` FROM `guilds` WHERE `usage_static` < 50 ORDER BY `number` ASC LIMIT 1'
-                )
-            elif which == 'animated':
-                await cursor.execute(
-                    'SELECT `guild_id` FROM `guilds` WHERE `usage_animated` < 50 ORDER BY `number` ASC LIMIT 1'
-                )
-            else:
-                raise exceptions.UnknownType(which)
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                if which == 'static':
+                    await cursor.execute(
+                        'SELECT `guild_id` FROM `guilds` WHERE `usage_static` < 50 ORDER BY `number` ASC LIMIT 1'
+                    )
+                elif which == 'animated':
+                    await cursor.execute(
+                        'SELECT `guild_id` FROM `guilds` WHERE `usage_animated` < 50 ORDER BY `number` ASC LIMIT 1'
+                    )
+                else:
+                    raise exceptions.UnknownType(which)
 
-            row = await cursor.fetchone()
+                row = await cursor.fetchone()
 
         return row[0]
 
@@ -213,25 +220,26 @@ class Database:
             Type of emoji to increase: `static`, `animated`.
         """
 
-        if self.conn is None:
+        if self.pool is None:
             raise exceptions.DatabaseNotConnected
 
-        async with self.conn.cursor() as cursor:
-            if which == 'static':
-                await cursor.execute(
-                    'UPDATE `guilds` SET `usage_static` = `usage_static` + 1 WHERE `guild_id` = %s',
-                    (guild_id,)
-                )
-            elif which == 'animated':
-                await cursor.execute(
-                    'UPDATE `guilds` SET `usage_animated` = `usage_animated` + 1 WHERE `guild_id` = %s',
-                    (guild_id,)
-                )
-            else:
-                raise exceptions.UnknownType(which)
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                if which == 'static':
+                    await cursor.execute(
+                        'UPDATE `guilds` SET `usage_static` = `usage_static` + 1 WHERE `guild_id` = %s',
+                        (guild_id,)
+                    )
+                elif which == 'animated':
+                    await cursor.execute(
+                        'UPDATE `guilds` SET `usage_animated` = `usage_animated` + 1 WHERE `guild_id` = %s',
+                        (guild_id,)
+                    )
+                else:
+                    raise exceptions.UnknownType(which)
 
-        # commit changes to database
-        await self.conn.commit()
+                # commit changes to database
+                await conn.commit()
 
         return True
 
@@ -246,25 +254,26 @@ class Database:
             Type of emoji to decrease: `static`, `animated`.
         """
 
-        if self.conn is None:
+        if self.pool is None:
             raise exceptions.DatabaseNotConnected
 
-        async with self.conn.cursor() as cursor:
-            if which == 'static':
-                await cursor.execute(
-                    'UPDATE `guilds` SET `usage_static` = `usage_static` - 1 WHERE `guild_id` = %s',
-                    (guild_id,)
-                )
-            elif which == 'animated':
-                await cursor.execute(
-                    'UPDATE `guilds` SET `usage_animated` = `usage_animated` - 1 WHERE `guild_id` = %s',
-                    (guild_id,)
-                )
-            else:
-                raise exceptions.UnknownType(which)
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                if which == 'static':
+                    await cursor.execute(
+                        'UPDATE `guilds` SET `usage_static` = `usage_static` - 1 WHERE `guild_id` = %s',
+                        (guild_id,)
+                    )
+                elif which == 'animated':
+                    await cursor.execute(
+                        'UPDATE `guilds` SET `usage_animated` = `usage_animated` - 1 WHERE `guild_id` = %s',
+                        (guild_id,)
+                    )
+                else:
+                    raise exceptions.UnknownType(which)
 
-        # commit changes to database
-        await self.conn.commit()
+                # commit changes to database
+                await conn.commit()
 
         return True
 
@@ -282,20 +291,21 @@ class Database:
             The emoji entry from database.
         """
 
-        if self.conn is None:
+        if self.pool is None:
             raise exceptions.DatabaseNotConnected
 
-        async with self.conn.cursor() as cursor:
-            if nsfw:
-                await cursor.execute(
-                    'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` ORDER BY `name` ASC'
-                )
-            else:
-                await cursor.execute(
-                    'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `nsfw` = 0 ORDER BY `name` ASC'
-                )
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                if nsfw:
+                    await cursor.execute(
+                        'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` ORDER BY `name` ASC'
+                    )
+                else:
+                    await cursor.execute(
+                        'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `nsfw` = 0 ORDER BY `name` ASC'
+                    )
 
-            rows = await cursor.fetchall()
+                rows = await cursor.fetchall()
 
         return rows
 
@@ -315,22 +325,23 @@ class Database:
             The emoji entry from database.
         """
 
-        if self.conn is None:
+        if self.pool is None:
             raise exceptions.DatabaseNotConnected
 
-        async with self.conn.cursor() as cursor:
-            if nsfw:
-                await cursor.execute(
-                    'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE %s ORDER BY `name` ASC',
-                    (f'%{name}%',)
-                )
-            else:
-                await cursor.execute(
-                    'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE %s AND `nsfw` = 0 ORDER BY `name` ASC',
-                    (f'%{name}%',)
-                )
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                if nsfw:
+                    await cursor.execute(
+                        'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE %s ORDER BY `name` ASC',
+                        (f'%{name}%',)
+                    )
+                else:
+                    await cursor.execute(
+                        'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE %s AND `nsfw` = 0 ORDER BY `name` ASC',
+                        (f'%{name}%',)
+                    )
 
-            rows = await cursor.fetchall()
+                rows = await cursor.fetchall()
 
         return rows
 
@@ -364,24 +375,25 @@ class Database:
             The Guild ID determines in which guild was created emoji.
         """
 
-        if self.conn is None:
+        if self.pool is None:
             raise exceptions.DatabaseNotConnected
 
-        async with self.conn.cursor() as cursor:
-            query = 'INSERT INTO `emojis` (`id`, `name`, `animated`, `nsfw`, `created`, `author_id`, `guild_id`) VALUES (%s, %s, %r, %r, %s, %s, %s)'
-            params = (
-                emoji_id,
-                emoji_name,
-                animated,
-                nsfw,
-                created_at,
-                author_id,
-                guild_id,
-            )
-            await cursor.execute(query, params)
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                query = 'INSERT INTO `emojis` (`id`, `name`, `animated`, `nsfw`, `created`, `author_id`, `guild_id`) VALUES (%s, %s, %r, %r, %s, %s, %s)'
+                params = (
+                    emoji_id,
+                    emoji_name,
+                    animated,
+                    nsfw,
+                    created_at,
+                    author_id,
+                    guild_id,
+                )
+                await cursor.execute(query, params)
 
-        # commit changes to database
-        await self.conn.commit()
+                # commit changes to database
+                await conn.commit()
 
         return True
 
@@ -396,17 +408,18 @@ class Database:
             The new name of emoji.
         """
 
-        if self.conn is None:
+        if self.pool is None:
             raise exceptions.DatabaseNotConnected
 
-        async with self.conn.cursor() as cursor:
-            await cursor.execute(
-                'UPDATE `emojis` SET `name` = %s WHERE `id` = %s',
-                (new_name, emoji_id,)
-            )
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute(
+                    'UPDATE `emojis` SET `name` = %s WHERE `id` = %s',
+                    (new_name, emoji_id,)
+                )
 
-        # commit changes to database
-        await self.conn.commit()
+                # commit changes to database
+                await conn.commit()
 
         return True
 
@@ -419,17 +432,18 @@ class Database:
             The emoji ID in database to delete.
         """
 
-        if self.conn is None:
+        if self.pool is None:
             raise exceptions.DatabaseNotConnected
 
-        async with self.conn.cursor() as cursor:
-            await cursor.execute(
-                'DELETE FROM `emojis` WHERE `id` = %s',
-                (emoji_id,)
-            )
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute(
+                    'DELETE FROM `emojis` WHERE `id` = %s',
+                    (emoji_id,)
+                )
 
-        # commit changes to database
-        await self.conn.commit()
+                # commit changes to database
+                await conn.commit()
 
         return True
 
@@ -444,16 +458,17 @@ class Database:
             Whether the emoji is NSFW or not.
         """
 
-        if self.conn is None:
+        if self.pool is None:
             raise exceptions.DatabaseNotConnected
 
-        async with self.conn.cursor() as cursor:
-            await cursor.execute(
-                'UPDATE `emojis` SET `nsfw` = %s WHERE `id` = %s',
-                (nsfw, emoji_id,)
-            )
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute(
+                    'UPDATE `emojis` SET `nsfw` = %s WHERE `id` = %s',
+                    (nsfw, emoji_id,)
+                )
 
-        # commit changes to database
-        await self.conn.commit()
+                # commit changes to database
+                await conn.commit()
 
         return True
