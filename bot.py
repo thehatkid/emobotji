@@ -35,7 +35,9 @@ bot = commands.Bot(
     activity=disnake.Activity(
         type=disnake.ActivityType.playing,
         name=f'with Emojis | Help: {cfg["bot"]["prefix"]}help'
-    )
+    ),
+    sync_commands=True,
+    sync_commands_debug=True
 )
 # Connect MySQL Database
 bot.db = Database(
@@ -58,13 +60,12 @@ bot.loop.create_task(after_bot_ready())
 
 # Loading Cogs
 bot.load_extension('cogs.events')
-bot.load_extension('cogs.commands')
-bot.load_extension('cogs.categories.misc')
-bot.load_extension('cogs.categories.listing')
-bot.load_extension('cogs.categories.add')
-bot.load_extension('cogs.categories.manage')
-bot.load_extension('cogs.help')
 bot.load_extension('cogs.emoji')
+bot.load_extension('cogs.commands')
+bot.load_extension('cogs.help')
+
+bot.load_extensions('cogs/app_commands')
+bot.load_extensions('cogs/categories')
 
 # Running Bot from Bot Token
 bot.run(cfg['bot']['token'])

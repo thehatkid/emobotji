@@ -332,12 +332,12 @@ class Database:
             async with conn.cursor() as cursor:
                 if nsfw:
                     await cursor.execute(
-                        'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE %s ORDER BY `name` ASC',
+                        'SELECT `id`, `name`, `animated`, `nsfw`, `author_id` FROM `emojis` WHERE `name` LIKE %s ORDER BY `name` ASC',
                         (f'%{name}%',)
                     )
                 else:
                     await cursor.execute(
-                        'SELECT `id`, `name`, `animated`, `nsfw` FROM `emojis` WHERE `name` LIKE %s AND `nsfw` = 0 ORDER BY `name` ASC',
+                        'SELECT `id`, `name`, `animated`, `nsfw`, `author_id` FROM `emojis` WHERE `name` LIKE %s AND `nsfw` = 0 ORDER BY `name` ASC',
                         (f'%{name}%',)
                     )
 
