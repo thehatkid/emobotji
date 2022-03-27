@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 cfg = yaml.safe_load(open('config.yml', 'r'))
 
 
-class CogCommands(commands.Cog):
+class TextCommands(commands.Cog):
     """Commands cog for Discord Bot."""
 
     def __init__(self, bot: commands.Bot):
@@ -20,34 +20,6 @@ class CogCommands(commands.Cog):
         self.db: Database = bot.db
         self.INVITE_SERVER_URL = cfg['bot']['misc']['invite-server']
         self.INVITE_BOT_URL = cfg['bot']['misc']['invite-bot']
-
-    @commands.command(name='reload', description='Reloads extenstion/cog (requires OWNER_ID)')
-    @commands.check(lambda ctx: ctx.author.id in cfg['bot']['supervisors'])
-    async def cmd_reload(self, ctx: commands.Context, which: str = 'all'):
-        if which == 'all':
-            self.bot.reload_extension('cogs.events')
-            self.bot.reload_extension('cogs.commands')
-            self.bot.reload_extension('cogs.categories.misc')
-            self.bot.reload_extension('cogs.categories.listing')
-            self.bot.reload_extension('cogs.categories.add')
-            self.bot.reload_extension('cogs.categories.manage')
-            self.bot.reload_extension('cogs.help')
-            self.bot.reload_extension('cogs.emoji')
-        elif which == 'events':
-            self.bot.reload_extension('cogs.events')
-        elif which == 'commands':
-            self.bot.reload_extension('cogs.commands')
-            self.bot.reload_extension('cogs.categories.misc')
-            self.bot.reload_extension('cogs.categories.listing')
-            self.bot.reload_extension('cogs.categories.add')
-            self.bot.reload_extension('cogs.categories.manage')
-        elif which == 'help':
-            self.bot.reload_extension('cogs.help')
-        elif which == 'emoji':
-            self.bot.reload_extension('cogs.emoji')
-        else:
-            return await ctx.send('Which reload?\n`events`, `commands`, `help`, `emoji` or `all`.')
-        return await ctx.send(':arrows_counterclockwise: Reloaded: `{}`'.format(which))
 
     @commands.command(name='ping', description='Shows embed with bot latency')
     async def cmd_ping(self, ctx: commands.Context):
@@ -66,15 +38,15 @@ class CogCommands(commands.Cog):
             value='{}ms'.format(round(self.bot.latency * 1000)),
             inline=False
         )
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
 
     @commands.command(name='invite', desciption='Sends Bot Invite link in chat.')
     async def cmd_invite(self, ctx: commands.Context):
-        await ctx.reply(self.INVITE_BOT_URL, mention_author=False)
+        await ctx.reply(self.INVITE_BOT_URL)
 
     @commands.command(name='support', desciption='Sends Bot Owner\'s Discord Support Server in chat.')
     async def cmd_support(self, ctx: commands.Context):
-        await ctx.reply(f'Need any help with bot? You can join to support server and ask question.\n{self.INVITE_SERVER_URL}', mention_author=False)
+        await ctx.reply(f'Need any help with bot? You can join to support server and ask question.\n{self.INVITE_SERVER_URL}')
 
     @commands.command(name='statistics', description='Shows an embed with bot statistics', aliases=['stats', 'stat'])
     async def cmd_statistics(self, ctx: commands.Context):
@@ -149,20 +121,23 @@ class CogCommands(commands.Cog):
             inline=True
         )
 
-        await ctx.reply(embed=embed, mention_author=False)
+        await ctx.reply(embed=embed)
 
 
-def setup(bot):
-    cog = CogCommands(bot)
+def setup(bot: commands.Bot):
+    cog = TextCommands(bot)
+
     if not cfg['bot']['misc']['invite-bot']:
         log.warning('Disabled Invite command due to missing invite link.')
         cog.cmd_invite.enabled = False
+
     if not cfg['bot']['misc']['invite-server']:
         log.warning('Disabled Support command due to missing invite link.')
         cog.cmd_support.enabled = False
+
     bot.add_cog(cog)
-    log.info('Loaded cog.')
+    log.info('Loaded')
 
 
 def teardown(bot):
-    log.info('Unloaded cog.')
+    log.info('Unloaded')

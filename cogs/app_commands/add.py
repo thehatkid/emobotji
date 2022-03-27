@@ -74,9 +74,9 @@ class AppCmdsAdd(commands.Cog):
                 await self.db.increase_usage_guild(guild.id, 'static')
 
             if nsfw:
-                await inter.edit_original_message(content=f':white_check_mark: Emoji {result} was added to bot and **marked as NSFW** only usage.')
+                await inter.edit_original_message(content=f':white_check_mark: Emoji {result} was added to bot and **marked as NSFW** only usage')
             else:
-                await inter.edit_original_message(content=f':white_check_mark: Emoji {result} was added to bot.')
+                await inter.edit_original_message(content=f':white_check_mark: Emoji {result} was added to bot')
 
     async def add_emoji_from_url(self, inter: disnake.AppCmdInter, name: str, url: str, nsfw: bool):
         await inter.response.defer()
@@ -85,15 +85,15 @@ class AppCmdsAdd(commands.Cog):
             async with self.http.get(url) as response:
                 if response.status == 200:
                     if response.headers['content-type'] not in ['image/png', 'image/jpeg', 'image/gif']:
-                        return await inter.edit_original_message(content=':x: Requested URL is not an **image**.')
+                        return await inter.edit_original_message(content=':x: Requested URL is not an image')
                     animated = True if response.headers['content-type'] == 'image/gif' else False
                     image = await response.read()
                 else:
                     return await inter.edit_original_message(content=f':x: Got error while downloading image from URL. HTTP Code: {response.status}')
         except asyncio.exceptions.TimeoutError:
-            return await inter.edit_original_message(content=':x: Timeout while downloading image from URL.')
+            return await inter.edit_original_message(content=':x: Timeout while downloading image from URL')
         except aiohttp.InvalidURL:
-            return await inter.edit_original_message(content=':x: Invalid URL.')
+            return await inter.edit_original_message(content=':x: Invalid URL')
         except Exception as e:
             return await inter.edit_original_message(content=f':x: Exception while downloading image from URL. Error: `{e}`')
 
@@ -122,13 +122,13 @@ class AppCmdsAdd(commands.Cog):
                 await self.db.increase_usage_guild(guild.id, 'static')
 
             if nsfw:
-                await inter.edit_original_message(content=f':white_check_mark: Emoji {result} was added to bot and **marked as NSFW** only usage.')
+                await inter.edit_original_message(content=f':white_check_mark: Emoji {result} was added to bot and **marked as NSFW** only usage')
             else:
-                await inter.edit_original_message(content=f':white_check_mark: Emoji {result} was added to bot.')
+                await inter.edit_original_message(content=f':white_check_mark: Emoji {result} was added to bot')
 
     @commands.slash_command(
         name='add',
-        description='Add emoji to bot',
+        description='Adds custom emoji to bot',
         options=[
             Option('name', 'The emoji name for further usage', OptionType.string, True),
             Option('emoji', 'The custom emoji from server for upload emoji to bot', OptionType.string, False),

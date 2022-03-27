@@ -3,14 +3,12 @@ import yaml
 import disnake
 from disnake.ext import commands
 
-
 log = logging.getLogger(__name__)
 cfg = yaml.safe_load(open('config.yml', 'r'))
 
 
 class Help(commands.Cog):
     def __init__(self, bot: commands.Bot):
-        super().__init__()
         self.PREFIX = cfg['bot']['prefix']
         self.INVITE_SERVER_URL = cfg['bot']['misc']['invite-server']
         self.INVITE_BOT_URL = cfg['bot']['misc']['invite-bot']
@@ -18,11 +16,15 @@ class Help(commands.Cog):
     @commands.group(invoke_without_command=True)
     async def help(self, ctx: commands.Context):
         embed = disnake.Embed(title=':information_source: Bot Help List', colour=disnake.Colour.blurple())
-        embed.description = f'To see command usage: `{self.PREFIX}help <command>`'
+
+        embed.description = ':warning: **Please use the Slash Commands**\n\n'
+        embed.description += f'To see command usage: `{self.PREFIX}help <command>`'
+
         if self.INVITE_SERVER_URL:
             embed.description += f'\n\nNeed help? [Join to Support Server]({self.INVITE_SERVER_URL})'
         if self.INVITE_BOT_URL:
             embed.description += f'\n\nNeed invite bot? [Invite Bot]({self.INVITE_BOT_URL})'
+
         embed.add_field(
             name='Bot',
             value='`ping`, `stats`, `invite`, `support`, `react`',
@@ -30,7 +32,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name='Emoji',
-            value='`list`, `search`, `info`, `big`',
+            value='`list`, `search`, `info`',
             inline=False
         )
         embed.add_field(
@@ -45,7 +47,8 @@ class Help(commands.Cog):
             ),
             icon_url=ctx.author.avatar
         )
-        await ctx.reply(embed=embed, mention_author=False)
+
+        await ctx.reply(embed=embed)
 
     @help.command(name='ping')
     async def help_ping(self, ctx: commands.Context):
@@ -63,7 +66,7 @@ class Help(commands.Cog):
             value='Pings bot and shows an embed of Bot\'s Latency in milliseconds.',
             inline=False
         )
-        await ctx.reply(embed=embed, mention_author=False)
+        await ctx.reply(embed=embed)
 
     @help.command(name='react')
     async def help_react(self, ctx: commands.Context):
@@ -81,7 +84,7 @@ class Help(commands.Cog):
             value='Reacts a Message (from current channel!) with emoji',
             inline=False
         )
-        await ctx.reply(embed=embed, mention_author=False)
+        await ctx.reply(embed=embed)
 
     @help.command(name='stats')
     async def help_stats(self, ctx: commands.Context):
@@ -104,7 +107,7 @@ class Help(commands.Cog):
             value='Shows an Embed with Bot Statistics (Bot Uptime, Joined Servers, Emojis)',
             inline=False
         )
-        await ctx.reply(embed=embed, mention_author=False)
+        await ctx.reply(embed=embed)
 
     @help.command(name='invite')
     async def help_invite(self, ctx: commands.Context):
@@ -122,7 +125,7 @@ class Help(commands.Cog):
             value='Sends Bot Invite link in chat.',
             inline=False
         )
-        await ctx.reply(embed=embed, mention_author=False)
+        await ctx.reply(embed=embed)
 
     @help.command(name='support')
     async def help_support(self, ctx: commands.Context):
@@ -140,7 +143,7 @@ class Help(commands.Cog):
             value='Sends Bot Owner\'s Discord Support Server in chat.',
             inline=False
         )
-        await ctx.reply(embed=embed, mention_author=False)
+        await ctx.reply(embed=embed)
 
     @help.command(name='list')
     async def help_list(self, ctx: commands.Context):
@@ -158,7 +161,7 @@ class Help(commands.Cog):
             value='Shows an Embed of Bot\'s list stored emojis.',
             inline=False
         )
-        await ctx.reply(embed=embed, mention_author=False)
+        await ctx.reply(embed=embed)
 
     @help.command(name='search')
     async def help_search(self, ctx: commands.Context):
@@ -181,7 +184,7 @@ class Help(commands.Cog):
             value='Searchs Emoji with that name or by keyword in name.',
             inline=False
         )
-        await ctx.reply(embed=embed, mention_author=False)
+        await ctx.reply(embed=embed)
 
     @help.command(name='info')
     async def help_info(self, ctx: commands.Context):
@@ -199,25 +202,7 @@ class Help(commands.Cog):
             value='Shows an Embed of Emoji Info. Who are uploaded, when are uploaded and it\'s animated or not.',
             inline=False
         )
-        await ctx.reply(embed=embed, mention_author=False)
-
-    @help.command(name='big')
-    async def help_big(self, ctx: commands.Context):
-        embed = disnake.Embed(
-            title=':information_source: Command: "Big Image" of Emoji',
-            colour=disnake.Colour.blurple()
-        )
-        embed.add_field(
-            name='Usage',
-            value=f'`{self.PREFIX}big <name of emoji>`',
-            inline=False
-        )
-        embed.add_field(
-            name='Description',
-            value='Gets emoji\'s image and posts photo attachment.',
-            inline=False
-        )
-        await ctx.reply(embed=embed, mention_author=False)
+        await ctx.reply(embed=embed)
 
     @help.command(name='add')
     async def help_add(self, ctx: commands.Context):
@@ -235,7 +220,7 @@ class Help(commands.Cog):
             value='Adds custom emoji to bot for further using.',
             inline=False
         )
-        await ctx.reply(embed=embed, mention_author=False)
+        await ctx.reply(embed=embed)
 
     @help.command(name='add-from-url')
     async def help_addfromurl(self, ctx: commands.Context):
@@ -253,7 +238,7 @@ class Help(commands.Cog):
             value='Adds custom emoji to bot from URL with Image.',
             inline=False
         )
-        await ctx.reply(embed=embed, mention_author=False)
+        await ctx.reply(embed=embed)
 
     @help.command(name='mark-nsfw')
     async def help_marknsfw(self, ctx: commands.Context):
@@ -276,7 +261,7 @@ class Help(commands.Cog):
             value='Marks your uploaded emoji as NSFW, unmarks if already been NSFW marked.',
             inline=False
         )
-        await ctx.reply(embed=embed, mention_author=False)
+        await ctx.reply(embed=embed)
 
     @help.command(name='rename')
     async def help_rename(self, ctx: commands.Context):
@@ -294,7 +279,7 @@ class Help(commands.Cog):
             value='Renames your emoji to new name. Useful for fixing typo.',
             inline=False
         )
-        await ctx.reply(embed=embed, mention_author=False)
+        await ctx.reply(embed=embed)
 
     @help.command(name='delete')
     async def help_delete(self, ctx: commands.Context):
@@ -312,13 +297,14 @@ class Help(commands.Cog):
             value='Deletes your emoji forever from bot.',
             inline=False
         )
-        await ctx.reply(embed=embed, mention_author=False)
+        await ctx.reply(embed=embed)
 
 
-def setup(bot):
-    bot.add_cog(Help(bot))
-    log.info('Loaded cog.')
+def setup(bot: commands.Bot):
+    cog = Help(bot)
+    bot.add_cog(cog)
+    log.info('Loaded')
 
 
 def teardown(bot):
-    log.info('Unloaded cog.')
+    log.info('Unloaded')

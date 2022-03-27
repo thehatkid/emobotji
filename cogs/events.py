@@ -4,12 +4,10 @@ import traceback
 import disnake
 from disnake.ext import commands
 
-
 log = logging.getLogger(__name__)
 
 
-class Events(commands.Cog):
-    """Events cog for Discord Bot."""
+class CogEvents(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -48,10 +46,11 @@ class Events(commands.Cog):
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
 
-def setup(bot):
-    bot.add_cog(Events(bot))
-    log.info('Loaded cog.')
+def setup(bot: commands.Bot):
+    cog = CogEvents(bot)
+    bot.add_cog(cog)
+    log.info('Loaded')
 
 
 def teardown(bot):
-    log.info('Unloaded cog.')
+    log.info('Unloaded')

@@ -31,6 +31,12 @@ bot = commands.Bot(
     command_prefix=cfg['bot']['prefix'],
     help_command=None,
     intents=intents,
+    allowed_mentions=disnake.AllowedMentions(
+        everyone=False,
+        users=True,
+        roles=False,
+        replied_user=False
+    ),
     status=disnake.Status.online,
     activity=disnake.Activity(
         type=disnake.ActivityType.playing,
@@ -61,11 +67,8 @@ bot.loop.create_task(after_bot_ready())
 # Loading Cogs
 bot.load_extension('cogs.events')
 bot.load_extension('cogs.emoji')
-bot.load_extension('cogs.commands')
-bot.load_extension('cogs.help')
-
 bot.load_extensions('cogs/app_commands')
-bot.load_extensions('cogs/categories')
+bot.load_extensions('cogs/text_commands')
 
 # Running Bot from Bot Token
 bot.run(cfg['bot']['token'])

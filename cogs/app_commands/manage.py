@@ -44,7 +44,7 @@ class AppCmdsManage(commands.Cog):
         if inter.author.id not in cfg['bot']['supervisors']:
             if inter.author.id != emoji_row['author_id']:
                 return await inter.response.send_message(
-                    ':x: That\'s not your emoji for renaming it.',
+                    ':x: That\'s not your emoji for renaming it',
                     ephemeral=True
                 )
 
@@ -56,7 +56,7 @@ class AppCmdsManage(commands.Cog):
 
         if not re.fullmatch(r'\w{2,32}', new_name, re.ASCII):
             return await inter.response.send_message(
-                f':x: `{new_name}` is not a valid emoji name to rename; use 2–32 English letters, numbers and underscores.',
+                f':x: `{new_name}` is not a valid emoji name to rename; use 2–32 English letters, numbers and underscores',
                 ephemeral=True
             )
 
@@ -79,7 +79,7 @@ class AppCmdsManage(commands.Cog):
 
         if view.switch is None:
             await inter.edit_original_message(
-                content=':x: Cancelled due to inactivity.',
+                content=':x: Cancelled due to inactivity',
                 view=None
             )
         elif view.switch is True:
@@ -102,7 +102,7 @@ class AppCmdsManage(commands.Cog):
                 )
         else:
             await inter.edit_original_message(
-                content=':x: Cancelled by user.',
+                content=':x: Cancelled by user',
                 view=None
             )
 
@@ -125,7 +125,7 @@ class AppCmdsManage(commands.Cog):
         if inter.author.id not in cfg['bot']['supervisors']:
             if inter.author.id != emoji_row['author_id']:
                 return await inter.response.send_message(
-                    ':x: That\'s not your emoji for deleting it.',
+                    ':x: That\'s not your emoji for deleting it',
                     ephemeral=True
                 )
 
@@ -148,7 +148,7 @@ class AppCmdsManage(commands.Cog):
 
         if view.switch is None:
             await inter.edit_original_message(
-                content=':x: Cancelled due to inactivity.',
+                content=':x: Cancelled due to inactivity',
                 view=None
             )
         elif view.switch is True:
@@ -176,12 +176,48 @@ class AppCmdsManage(commands.Cog):
                 )
         else:
             await inter.edit_original_message(
-                content=':x: Cancelled by user.',
+                content=':x: Cancelled by user',
                 view=None
             )
 
+    @scmd_manage.sub_command(
+        name='mark-nsfw',
+        description='Marks emoji as (not) NSFW-usage only',
+        options=[
+            Option('emoji_name', 'The emoji for marking', OptionType.string, True)
+        ]
+    )
+    async def scmd_manage_mark_nsfw(self, inter: disnake.AppCmdInter, emoji_name: str):
+        emoji = await self.db.get_emoji(emoji_name)
+
+        if emoji is None:
+            await inter.response.send_message(
+                f':x: Emoji `{emoji_name}` not exists in bot',
+                ephemeral=True
+            )
+        else:
+            if inter.author.id in cfg['bot']['supervisors'] or emoji['author_id'] == inter.author.id:
+                if emoji['nsfw']:
+                    await self.db.set_nsfw_mark(emoji['id'], False)
+                    await inter.response.send_message(
+                        f':white_check_mark: Emoji `{emoji_name}` was **unmarked** as NSFW',
+                        ephemeral=True
+                    )
+                else:
+                    await self.db.set_nsfw_mark(emoji['id'], True)
+                    await inter.response.send_message(
+                        f':white_check_mark: Emoji `{emoji_name}` was **marked** as NSFW',
+                        ephemeral=True
+                    )
+            else:
+                await inter.response.send_message(
+                    ':x: Sorry, You can\'t mark other\'s emoji',
+                    ephemeral=True
+                )        
+
     @scmd_manage_rename.autocomplete('emoji_name')
     @scmd_manage_delete.autocomplete('emoji_name')
+    @scmd_manage_mark_nsfw.autocomplete('emoji_name')
     async def autocomp_emojis(self, inter: disnake.AppCmdInter, name: str) -> list[str]:
         emoji_list = await self.db.get_emoji_list_by_name(name, inter.channel.is_nsfw)
         result = []

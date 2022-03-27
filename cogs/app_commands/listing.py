@@ -17,7 +17,7 @@ class AppCmdsListing(commands.Cog):
 
     @commands.slash_command(
         name='list',
-        description='Gives an emoji list',
+        description='Shows an embed with emoji list',
         options=[
             Option('page', 'The number of emoji list page', OptionType.integer, False)
         ]
@@ -79,7 +79,7 @@ class AppCmdsListing(commands.Cog):
         limit = 15
 
         while True:
-            embed = disnake.Embed(title='Bot Emoji List', color=disnake.Colour.blurple(), description='')
+            embed = disnake.Embed(title=f'Found list by word: `{query}`', color=disnake.Colour.blurple(), description='')
 
             try:
                 for i in range(0 + position, limit + position):
