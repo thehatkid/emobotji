@@ -8,7 +8,7 @@ from disnake.ext import commands
 log = logging.getLogger(__name__)
 
 
-class TextCommandsListing(commands.Cog):
+class TextCmdsListing(commands.Cog, name='Listing'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.db: Database = bot.db
@@ -100,7 +100,7 @@ class TextCommandsListing(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    cog = TextCommandsListing(bot)
+    cog = TextCmdsListing(bot)
     bot.add_cog(cog)
     log.info('Loaded')
 

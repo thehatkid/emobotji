@@ -12,9 +12,7 @@ log = logging.getLogger(__name__)
 cfg = yaml.safe_load(open('config.yml', 'r'))
 
 
-class TextCommands(commands.Cog):
-    """Commands cog for Discord Bot."""
-
+class TextCmds(commands.Cog, name='Bot Commands'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.db: Database = bot.db
@@ -125,7 +123,7 @@ class TextCommands(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    cog = TextCommands(bot)
+    cog = TextCmds(bot)
 
     if not cfg['bot']['misc']['invite-bot']:
         log.warning('Disabled Invite command due to missing invite link.')

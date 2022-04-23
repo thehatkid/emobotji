@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 cfg = yaml.safe_load(open('config.yml', 'r'))
 
 
-class TextCommandsMisc(commands.Cog):
+class TextCmdsMisc(commands.Cog, name='Miscellaneous'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.db: Database = bot.db
@@ -73,7 +73,7 @@ class TextCommandsMisc(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    cog = TextCommandsMisc(bot)
+    cog = TextCmdsMisc(bot)
     bot.add_cog(cog)
     log.info('Loaded')
 

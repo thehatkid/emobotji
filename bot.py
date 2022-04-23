@@ -2,6 +2,7 @@ import logging
 import yaml
 from datetime import datetime
 from utils.database import Database
+from utils.help import HelpCommand
 import disnake
 from disnake.ext import commands
 
@@ -29,7 +30,7 @@ intents = disnake.Intents(
 # Initialize Bot Class
 bot = commands.Bot(
     command_prefix=cfg['bot']['prefix'],
-    help_command=None,
+    help_command=HelpCommand(),
     intents=intents,
     allowed_mentions=disnake.AllowedMentions(
         everyone=False,

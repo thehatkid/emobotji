@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 cfg = yaml.safe_load(open('config.yml', 'r'))
 
 
-class TextCommandsManage(commands.Cog):
+class TextCmdsManage(commands.Cog, name='Emoji Management'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.db: Database = bot.db
@@ -115,7 +115,7 @@ class TextCommandsManage(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    cog = TextCommandsManage(bot)
+    cog = TextCmdsManage(bot)
     bot.add_cog(cog)
     log.info('Loaded')
 
