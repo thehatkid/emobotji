@@ -1,6 +1,8 @@
 import logging
 import yaml
 import re
+from datetime import datetime
+import calendar
 from utils.database import Database
 import disnake
 from disnake.ext import commands
@@ -29,8 +31,8 @@ class TextCommandsMisc(commands.Cog):
         if emoji is None:
             await ctx.reply(f':x: Emoji `{name}` not exists in bot')
         else:
-            upd_ts = emoji['created_at'].timestamp()
-            created_field = '<t:{0}:f> (<t:{0}:R>)'.format(int(upd_ts))
+            created_at = datetime.fromtimestamp(calendar.timegm(emoji['created_at'].timetuple()))
+            created_field = '<t:{0}:f> (<t:{0}:R>)'.format(int(created_at.timestamp()))
             uploader_field = '<@{0}>'.format(emoji['author_id'])
 
             if emoji['author_id'] == ctx.author.id:
