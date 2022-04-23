@@ -21,7 +21,7 @@ class AppCmdsBot(commands.Cog):
 
     @commands.slash_command(
         name='bot',
-        description='Bot\'s commands'
+        description='Bot commands'
     )
     async def scmd_bot(self, inter: disnake.AppCmdInter):
         pass
@@ -122,32 +122,26 @@ class AppCmdsBot(commands.Cog):
 
     @scmd_bot.sub_command(
         name='invite',
-        description='Shows Bot Invite link'
+        description='Shows Bot invite link'
     )
     async def scmd_bot_invite(self, inter: disnake.AppCmdInter):
         if self.INVITE_BOT_URL:
-            await inter.response.send_message(self.INVITE_BOT_URL, ephemeral=True)
+            await inter.response.send_message(f'Bot Invite Link: {self.INVITE_BOT_URL}', ephemeral=True)
         else:
-            await inter.response.send_message(
-                ':x: This subcommand is not available for this moment',
-                ephemeral=True
-            )
+            await inter.response.send_message(':x: This subcommand is not available for this moment', ephemeral=True)
 
     @scmd_bot.sub_command(
         name='support',
-        description='Shows Bot Support Server'
+        description='Shows Bot support server invite link'
     )
     async def scmd_bot_support(self, inter: disnake.AppCmdInter):
         if self.INVITE_SERVER_URL:
             await inter.response.send_message(
-                f'Need any help with bot? You can join to support server and ask question.\n{self.INVITE_SERVER_URL}',
+                f'Need any help with bot? You can join to support server and ask question in specialized channel:\n{self.INVITE_SERVER_URL}',
                 ephemeral=True
             )
         else:
-            await inter.response.send_message(
-                ':x: This subcommand is not available for this moment',
-                ephemeral=True
-            )
+            await inter.response.send_message(':x: This subcommand is not available for this moment', ephemeral=True)
 
 
 def setup(bot: commands.Bot):

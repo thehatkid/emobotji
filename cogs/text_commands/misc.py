@@ -29,7 +29,15 @@ class TextCommandsMisc(commands.Cog):
         if emoji is None:
             await ctx.reply(f':x: Emoji `{name}` not exists in bot')
         else:
-            embed = disnake.Embed(title=f':information_source: Emoji `{name}`', colour=disnake.Colour.blurple())
+            upd_ts = emoji['created_at'].timestamp()
+            created_field = '<t:{0}:f> (<t:{0}:R>)'.format(int(upd_ts))
+            uploader_field = '<@{0}>'.format(emoji['author_id'])
+
+            if emoji['author_id'] == ctx.author.id:
+                uploader_field += ' *(is you!)*'
+
+            embed = disnake.Embed(title=f':information_source: Emoji `{emoji["name"]}`', colour=disnake.Colour.blurple())
+
             if not is_nsfw and emoji['nsfw']:
                 embed.description = '*Preview of Emoji are unavailable because that\'s NSFW*'
             else:
@@ -37,12 +45,12 @@ class TextCommandsMisc(commands.Cog):
                     emoji['id'],
                     'gif' if emoji['animated'] else 'png'
                 ))
-            embed.add_field(name='Uploaded by:', value='<@{0}>{1}'.format(
-                emoji['author_id'], ' *(is you!)*' if emoji['author_id'] == ctx.author.id else ''
-            ), inline=False)
-            embed.add_field(name='Created at:', value='<t:{0}:f> (<t:{0}:R>)'.format(int(emoji['created_at'].timestamp())), inline=False)
+
+            embed.add_field(name='Uploaded by:', value=uploader_field, inline=False)
+            embed.add_field(name='Created at:', value=created_field, inline=False)
             embed.add_field(name='Animated?', value='Yes' if emoji['animated'] else 'No', inline=False)
             embed.add_field(name='NSFW?', value='Yes' if emoji['nsfw'] else 'No', inline=False)
+
             await ctx.reply(embed=embed)
 
     @commands.command(name='react', description='Reacts message with emoji.')

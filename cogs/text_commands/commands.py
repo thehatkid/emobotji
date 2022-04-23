@@ -42,11 +42,11 @@ class TextCommands(commands.Cog):
 
     @commands.command(name='invite', desciption='Sends Bot Invite link in chat.')
     async def cmd_invite(self, ctx: commands.Context):
-        await ctx.reply(self.INVITE_BOT_URL)
+        await ctx.reply(f'Bot Invite Link: {self.INVITE_BOT_URL}')
 
     @commands.command(name='support', desciption='Sends Bot Owner\'s Discord Support Server in chat.')
     async def cmd_support(self, ctx: commands.Context):
-        await ctx.reply(f'Need any help with bot? You can join to support server and ask question.\n{self.INVITE_SERVER_URL}')
+        await ctx.reply(f'Need any help with bot? You can join to support server and ask question in specialized channel:\n{self.INVITE_SERVER_URL}')
 
     @commands.command(name='statistics', description='Shows an embed with bot statistics', aliases=['stats', 'stat'])
     async def cmd_statistics(self, ctx: commands.Context):

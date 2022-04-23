@@ -39,7 +39,7 @@ class AppCmdsEmoji(commands.Cog):
 
     @commands.slash_command(
         name='react',
-        description='Reacts with bot\'s emoji by bot',
+        description='Reacts the message with bot\'s emoji by Message ID',
         options=[
             Option('emoji', 'The emoji name to react the emoji to message', OptionType.string, True),
             Option('message_id', 'The message ID from same channel to react it', OptionType.string, True)
@@ -51,10 +51,7 @@ class AppCmdsEmoji(commands.Cog):
         try:
             message_id = int(message_id)
         except ValueError:
-            return await inter.response.send_message(
-                ':x: The message ID invalid.',
-                ephemeral=True
-            )
+            return await inter.response.send_message(':x: The message ID invalid.', ephemeral=True)
 
         if emoji_row:
             if emoji_row['nsfw'] and not inter.channel.nsfw:
@@ -92,7 +89,7 @@ class AppCmdsEmoji(commands.Cog):
     @scmd_emoji.autocomplete('emoji')
     @scmd_react.autocomplete('emoji')
     async def autocomp_emojis(self, inter: disnake.AppCmdInter, name: str) -> list[str]:
-        emoji_list = await self.db.get_emoji_list_by_name(name, inter.channel.is_nsfw)
+        emoji_list = await self.db.get_emoji_list_by_name(name, inter.channel.nsfw)
         result = []
 
         for emoji in emoji_list:
