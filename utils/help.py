@@ -12,18 +12,13 @@ class HelpCommand(commands.HelpCommand):
         ctx = self.context
         help_command = f'{ctx.clean_prefix}{ctx.command.name}'
 
-        help_content = f"""**Hello, {ctx.author.mention}! Welcome to the bot help page.**
-
-        :warning: **Please use the Application (Slash) Commands.**
-
-        Use `{help_command} <command>` for get more info on a command.
-
-        Usage legend:
-        - `<argument>` - This means the argument is __required__.
-        - `[argument]` - This means the argument is __optional__.
-
-        **Bot Commands:**
-        """
+        help_content = f'**Hello, {ctx.author.mention}! Welcome to the bot help page.**\n\n'
+        help_content += ':warning: **Please use the Application (Slash) Commands.**\n\n'
+        help_content += f'Use `{help_command} <command>` for get more info on a command.\n\n'
+        help_content += '**Usage legend:**\n'
+        help_content += '- `<argument>` - This means the argument is __required__.\n'
+        help_content += '- `[argument]` - This means the argument is __optional__.\n\n'
+        help_content += '**Bot Commands:**'
 
         embed = disnake.Embed(
             title=':information_source: Bot Help',
