@@ -1,5 +1,6 @@
 import logging
 from utils.database import Database
+from thefuzz import process
 import disnake
 from disnake import Option
 from disnake import OptionType
@@ -89,14 +90,19 @@ class AppCmdsEmoji(commands.Cog):
     @scmd_emoji.autocomplete('emoji')
     @scmd_react.autocomplete('emoji')
     async def autocomp_emojis(self, inter: disnake.AppCmdInter, name: str) -> list[str]:
-        emoji_list = await self.db.get_emoji_list_by_name(name, inter.channel.nsfw)
-        result = []
+        emoji_list = await self.db.get_emoji_list(inter.channel.nsfw)
+        emoji_names = [emoji[1] for emoji in emoji_list]
 
-        for emoji in emoji_list:
-            if len(result) < 25:
-                result.append(emoji[1])
-            else:
-                break
+        if name:
+            matches = process.extract(name, emoji_names, limit=25)
+            result = [match[0] for match in matches]
+        else:
+            result = []
+            for name in emoji_names:
+                if len(result) < 25:
+                    result.append(name)
+                else:
+                    break
 
         return result
 

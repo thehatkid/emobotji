@@ -219,7 +219,7 @@ class AppCmdsManage(commands.Cog):
     @scmd_manage_delete.autocomplete('emoji_name')
     @scmd_manage_mark_nsfw.autocomplete('emoji_name')
     async def autocomp_emojis(self, inter: disnake.AppCmdInter, name: str) -> list[str]:
-        emoji_list = await self.db.get_emoji_list_by_name(name, inter.channel.nsfw)
+        emoji_list = await self.db.get_emoji_list_by_name(name)
         result = []
 
         for emoji in emoji_list:
