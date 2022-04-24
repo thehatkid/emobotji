@@ -19,9 +19,9 @@ class AppCmdsMisc(commands.Cog):
 
     @commands.slash_command(
         name='info',
-        description='Gives an infomation about emoji',
+        description='Shows an embed with emoji infomation by name',
         options=[
-            Option('emoji', 'The emoji for retrieving information', OptionType.string, True)
+            Option('emoji', 'The emoji name for retrieving information', OptionType.string, True)
         ]
     )
     async def scmd_info(self, inter: disnake.AppCmdInter, emoji: str):

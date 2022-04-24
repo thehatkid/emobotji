@@ -19,7 +19,7 @@ class TextCmds(commands.Cog, name='Bot Commands'):
         self.INVITE_SERVER_URL = cfg['bot']['misc']['invite-server']
         self.INVITE_BOT_URL = cfg['bot']['misc']['invite-bot']
 
-    @commands.command(name='ping', description='Shows embed with bot latency')
+    @commands.command(name='ping', description='Pings the bot and shows ping latency')
     async def cmd_ping(self, ctx: commands.Context):
         embed = disnake.Embed(
             title=':ping_pong: Pong!',
@@ -38,13 +38,19 @@ class TextCmds(commands.Cog, name='Bot Commands'):
         )
         await ctx.reply(embed=embed)
 
-    @commands.command(name='invite', desciption='Sends Bot Invite link in chat.')
+    @commands.command(name='invite', description='Shows Bot invite link in your DMs')
     async def cmd_invite(self, ctx: commands.Context):
-        await ctx.reply(f'Bot Invite Link: {self.INVITE_BOT_URL}')
+        try:
+            await ctx.author.send(f'Bot Invite Link: {self.INVITE_BOT_URL}')
+        except disnake.HTTPException:
+            await ctx.reply(':x: Failed to DM you. Check your privacy settings.')
 
-    @commands.command(name='support', desciption='Sends Bot Owner\'s Discord Support Server in chat.')
+    @commands.command(name='support', description='Shows Bot support server invite link in your DMs')
     async def cmd_support(self, ctx: commands.Context):
-        await ctx.reply(f'Need any help with bot? You can join to support server and ask question in specialized channel:\n{self.INVITE_SERVER_URL}')
+        try:
+            await ctx.author.send(f'Need any help with bot? You can join to support server and ask question in specialized channel:\n{self.INVITE_SERVER_URL}')
+        except disnake.HTTPException:
+            await ctx.reply(':x: Failed to DM you. Check your privacy settings.')
 
     @commands.command(name='statistics', description='Shows an embed with bot statistics', aliases=['stats', 'stat'])
     async def cmd_statistics(self, ctx: commands.Context):

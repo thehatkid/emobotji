@@ -13,7 +13,7 @@ class TextCmdsListing(commands.Cog, name='Listing'):
         self.bot = bot
         self.db: Database = bot.db
 
-    @commands.command(name='list', description='Shows an embed with emoji list')
+    @commands.command(name='list', description='Shows an embed with bot emoji list')
     async def cmd_list(self, ctx: commands.Context, page: int = 1):
         if isinstance(ctx.channel, disnake.DMChannel):
             NSFW = False
@@ -58,7 +58,7 @@ class TextCmdsListing(commands.Cog, name='Listing'):
         view = ViewPaginator(ctx.author, embeds, len(EMOJI_LIST), page - 1)
         view.msg = await ctx.reply(embed=embeds[page - 1], view=view)
 
-    @commands.command(name='search', description='Searches an emoji list with given query', aliases=['find'])
+    @commands.command(name='search', description='Searches an bot emoji list with given name/word', aliases=['find'])
     async def cmd_search(self, ctx: commands.Context, name: str):
         if isinstance(ctx.channel, disnake.DMChannel):
             NSFW = False

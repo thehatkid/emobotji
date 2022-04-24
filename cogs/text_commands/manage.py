@@ -72,7 +72,7 @@ class TextCmdsManage(commands.Cog, name='Emoji Management'):
         else:
             await ctx.reply(f':x: {emoji_name} was not found in bot\'s servers. Please contact to Bot Developer.')
 
-    @commands.command(name='delete', description='Deletes owner\'s emoji from bot')
+    @commands.command(name='delete', description='Deletes your emoji from bot')
     async def cmd_delete(self, ctx: commands.Context, name: str):
         emoji = await self.db.get_emoji(name)
 

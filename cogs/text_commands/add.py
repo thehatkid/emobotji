@@ -31,7 +31,7 @@ class TextCmdsAdd(commands.Cog, name='Add Emojis'):
             await self.http.close()
         self.bot.loop.create_task(close_http_session())
 
-    @commands.command(name='add', description='Adds custom emoji to Bot')
+    @commands.command(name='add', description='Adds custom emoji from server to bot for further usage')
     async def cmd_add(self, ctx: commands.Context, name: str, emoji: str, nsfw: str = '0'):
         if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
             return await ctx.reply(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores')
@@ -83,7 +83,7 @@ class TextCmdsAdd(commands.Cog, name='Add Emojis'):
             else:
                 await ctx.reply(f':white_check_mark: Emoji {result} was added to bot')
 
-    @commands.command(name='add-from-url', description='Adds emoji from URL with Image')
+    @commands.command(name='add-from-url', description='Adds emoji from URL with image to bot for further usage')
     async def cmd_addfromurl(self, ctx: commands.Context, name: str, url: str, nsfw: str = '0'):
         if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
             return await ctx.reply(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores')

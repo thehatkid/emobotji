@@ -40,7 +40,7 @@ class AppCmdsEmoji(commands.Cog):
 
     @commands.slash_command(
         name='react',
-        description='Reacts the message with bot\'s emoji by Message ID',
+        description='Reacts message with emoji by message ID (also must be in same channel)',
         options=[
             Option('emoji', 'The emoji name to react the emoji to message', OptionType.string, True),
             Option('message_id', 'The message ID from same channel to react it', OptionType.string, True)

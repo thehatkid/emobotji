@@ -17,7 +17,7 @@ class AppCmdsListing(commands.Cog):
 
     @commands.slash_command(
         name='list',
-        description='Shows an embed with emoji list',
+        description='Shows an embed with bot emoji list',
         options=[
             Option('page', 'The number of emoji list page', OptionType.integer, False)
         ]
@@ -63,7 +63,7 @@ class AppCmdsListing(commands.Cog):
 
     @commands.slash_command(
         name='search',
-        description='Searches an emoji list with given query',
+        description='Searches an bot emoji list with given name/word',
         options=[
             Option('query', 'The query of emoji to find', OptionType.string, True)
         ]

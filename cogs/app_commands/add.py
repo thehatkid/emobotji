@@ -128,7 +128,7 @@ class AppCmdsAdd(commands.Cog):
 
     @commands.slash_command(
         name='add',
-        description='Adds custom emoji to bot',
+        description='Adds custom emoji from server or URL with image to bot for further usage',
         options=[
             Option('name', 'The emoji name for further usage', OptionType.string, True),
             Option('emoji', 'The custom emoji from server for upload emoji to bot', OptionType.string, False),

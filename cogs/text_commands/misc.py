@@ -16,7 +16,7 @@ class TextCmdsMisc(commands.Cog, name='Miscellaneous'):
         self.bot = bot
         self.db: Database = bot.db
 
-    @commands.command(name='info', description='Shows an embed with emoji infomation by name. Who created, when emoji was uploaded, etc.')
+    @commands.command(name='info', description='Shows an embed with emoji infomation by name')
     async def cmd_info(self, ctx: commands.Context, name: str):
         if isinstance(ctx.channel, disnake.DMChannel):
             is_nsfw = False
@@ -55,7 +55,7 @@ class TextCmdsMisc(commands.Cog, name='Miscellaneous'):
 
             await ctx.reply(embed=embed)
 
-    @commands.command(name='react', description='Reacts message with emoji.')
+    @commands.command(name='react', description='Reacts message with emoji by message ID (also must be in same channel)')
     async def cmd_react(self, ctx: commands.Context, name: str, message_id: int):
         try:
             msg = await ctx.fetch_message(message_id)
