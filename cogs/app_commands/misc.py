@@ -70,9 +70,9 @@ class AppCmdsMisc(commands.Cog):
             result = [match[0] for match in matches]
         else:
             result = []
-            for name in emoji_names:
+            for emoji_name in emoji_names:
                 if len(result) < 25:
-                    result.append(name)
+                    result.append(emoji_name)
                 else:
                     break
 
