@@ -19,8 +19,6 @@ class DatabaseNotConnected(Exception):
 
 
 class UnknownType(Exception):
-    """Raised when the database is not connected."""
-
     def __init__(self, which: str):
         self.which = which
 

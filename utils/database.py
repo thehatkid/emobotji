@@ -207,6 +207,9 @@ class Database:
 
                 row = await cursor.fetchone()
 
+        if row is None:
+            return None
+
         return row[0]
 
     async def increase_usage_guild(self, guild_id: int, which: str) -> bool:
