@@ -33,7 +33,13 @@ class HelpCommand(commands.HelpCommand):
         for cog, cmds in mapping.items():
             if isinstance(cog, commands.Cog):
                 if len(cmds) > 0:
-                    cmds_inline = ', '.join([f'`{cmd.name}`' for cmd in cmds])
+                    cmd_names = []
+                    for cmd in cmds:
+                        if not cmd.hidden:
+                            cmd_names.append(cmd.name)
+                    if not len(cmd_names):
+                        continue
+                    cmds_inline = ', '.join([f'`{cmd_name}`' for cmd_name in cmd_names])
                     embed.add_field(
                         name=f'{cog.qualified_name} ({len(cmds)})',
                         value=cmds_inline,
