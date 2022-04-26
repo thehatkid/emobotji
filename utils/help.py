@@ -37,7 +37,7 @@ class HelpCommand(commands.HelpCommand):
                     for cmd in cmds:
                         if not cmd.hidden:
                             cmd_names.append(cmd.name)
-                    if not len(cmd_names):
+                    if not cmd_names:
                         continue
                     cmds_inline = ', '.join([f'`{cmd_name}`' for cmd_name in cmd_names])
                     embed.add_field(
