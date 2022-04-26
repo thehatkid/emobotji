@@ -4,6 +4,7 @@ import re
 import asyncio
 import aiohttp
 from datetime import datetime
+from utils import fetch_image
 from utils.database import Database
 import disnake
 from disnake import Option
@@ -34,6 +35,36 @@ class AppCmdsAdd(commands.Cog):
             await self.http.close()
         self.bot.loop.create_task(close_http_session())
 
+    async def add_emoji_to_bot(self, inter: disnake.AppCmdInter, name: str, image: bytes, animated: bool, nsfw: bool = False):
+        if animated:
+            guild_id = await self.db.get_available_guild('animated')
+        else:
+            guild_id = await self.db.get_available_guild('static')
+
+        if guild_id is None:
+            return await inter.edit_original_message(content=':x: Emoji was not uploaded: `NO_FREE_AVAILABLE_GUILDS`\nPlease, contact to Bot Developer')
+        guild = self.bot.get_guild(guild_id)
+
+        try:
+            result = await guild.create_custom_emoji(name=name, image=image, reason=f'Addition Requested by {inter.author.id}')
+        except disnake.errors.HTTPException as e:
+            if e.status == 429:
+                await inter.edit_original_message(content=f':x: Bot has rate limited: `{e}`')
+            else:
+                await inter.edit_original_message(content=f':x: Emoji was not added to bot. Error: `{e}`')
+        else:
+            await self.db.add_emoji(result.id, result.name, result.animated, nsfw, datetime.utcnow(), inter.author.id, guild.id)
+
+            if animated:
+                await self.db.increase_usage_guild(guild.id, 'animated')
+            else:
+                await self.db.increase_usage_guild(guild.id, 'static')
+
+            if nsfw:
+                await inter.edit_original_message(content=f':white_check_mark: Emoji {result} was added to bot and **marked as NSFW** only usage')
+            else:
+                await inter.edit_original_message(content=f':white_check_mark: Emoji {result} was added to bot')
+
     async def add_emoji_from_custom(self, inter: disnake.AppCmdInter, name: str, emoji: str, nsfw: bool):
         match = self.REGEX_EMOJI.match(emoji)
         if match is None:
@@ -42,89 +73,38 @@ class AppCmdsAdd(commands.Cog):
 
         await inter.response.defer()
 
-        async with self.http.get(
-            'https://cdn.discordapp.com/emojis/{0}.{1}?size=128'.format(
-                emoji_id, 'gif' if animated else 'png'
-            )
-        ) as response:
-            image = await response.read()
+        uri = 'https://cdn.discordapp.com/emojis/{0}.{1}?size=128'.format(
+            emoji_id, 'gif' if animated else 'png'
+        )
+        data = await fetch_image(self.http, uri)
 
-        if animated:
-            guild_id = await self.db.get_available_guild('animated')
-        else:
-            guild_id = await self.db.get_available_guild('static')
+        if data[0] is False:
+            return await inter.edit_original_message(':x: Something went wrong while loading image')
 
-        if guild_id is None:
-            return await inter.edit_original_message(content=':x: Emoji was not uploaded: `NO_FREE_AVAILABLE_GUILDS`\nPlease, contact to Bot Developer')
-        guild = self.bot.get_guild(guild_id)
-
-        try:
-            result = await guild.create_custom_emoji(name=name, image=image, reason=f'Addition Requested by {inter.author.id}')
-        except disnake.errors.HTTPException as e:
-            if e.status == 429:
-                await inter.edit_original_message(content=f':x: Bot has rate limited: `{e}`')
-            else:
-                await inter.edit_original_message(content=f':x: Emoji was not added to bot. Error: `{e}`')
-        else:
-            await self.db.add_emoji(result.id, result.name, result.animated, nsfw, datetime.utcnow(), inter.author.id, guild.id)
-
-            if animated:
-                await self.db.increase_usage_guild(guild.id, 'animated')
-            else:
-                await self.db.increase_usage_guild(guild.id, 'static')
-
-            if nsfw:
-                await inter.edit_original_message(content=f':white_check_mark: Emoji {result} was added to bot and **marked as NSFW** only usage')
-            else:
-                await inter.edit_original_message(content=f':white_check_mark: Emoji {result} was added to bot')
+        await self.add_emoji_to_bot(inter, name, data[2], data[1], nsfw)
 
     async def add_emoji_from_url(self, inter: disnake.AppCmdInter, name: str, url: str, nsfw: bool):
         await inter.response.defer()
 
         try:
-            async with self.http.get(url) as response:
-                if response.status == 200:
-                    if response.headers['content-type'] not in ['image/png', 'image/jpeg', 'image/gif']:
-                        return await inter.edit_original_message(content=':x: Requested URL is not an image')
-                    animated = True if response.headers['content-type'] == 'image/gif' else False
-                    image = await response.read()
-                else:
-                    return await inter.edit_original_message(content=f':x: Got error while downloading image from URL. HTTP Code: {response.status}')
-        except asyncio.exceptions.TimeoutError:
-            return await inter.edit_original_message(content=':x: Timeout while downloading image from URL')
+            data = await fetch_image(self.http, url)
         except aiohttp.InvalidURL:
             return await inter.edit_original_message(content=':x: Invalid URL')
-        except Exception as e:
-            return await inter.edit_original_message(content=f':x: Exception while downloading image from URL. Error: `{e}`')
+        except asyncio.exceptions.TimeoutError:
+            return await inter.edit_original_message(content=':x: Timeout while downloading image from URL')
+        except Exception as exc:
+            await inter.edit_original_message(content=f':x: Exception while downloading image from URL. Error: `{exc.__class__.__name__}: {exc}`')
 
-        if animated:
-            guild_id = await self.db.get_available_guild('animated')
-        else:
-            guild_id = await self.db.get_available_guild('static')
-
-        if guild_id is None:
-            return await inter.edit_original_message(content=':x: Emoji was not uploaded: `NO_FREE_AVAILABLE_GUILDS`\nPlease, contact to Bot Developer')
-        guild = self.bot.get_guild(guild_id)
-
-        try:
-            result = await guild.create_custom_emoji(name=name, image=image, reason=f'Addition Requested by {inter.author.id}')
-        except disnake.errors.HTTPException as e:
-            if e.status == 429:
-                await inter.edit_original_message(content=f':x: Bot has rate limited: `{e}`')
+        if data[0] is False:
+            if data[1] == 1:
+                await inter.edit_original_message(content=':x: Requested URL is not an image')
+            elif data[1] == 2:
+                await inter.edit_original_message(content=f':x: Got error while downloading image from URL. HTTP Code: {data[2]}')
             else:
-                await inter.edit_original_message(content=f':x: Emoji was not added to bot. Error: `{e}`')
-        else:
-            await self.db.add_emoji(result.id, result.name, result.animated, nsfw, datetime.utcnow(), inter.author.id, guild.id)
+                await inter.edit_original_message(content=f':x: Something went wrong while loading image')
+            return
 
-            if animated:
-                await self.db.increase_usage_guild(guild.id, 'animated')
-            else:
-                await self.db.increase_usage_guild(guild.id, 'static')
-
-            if nsfw:
-                await inter.edit_original_message(content=f':white_check_mark: Emoji {result} was added to bot and **marked as NSFW** only usage')
-            else:
-                await inter.edit_original_message(content=f':white_check_mark: Emoji {result} was added to bot')
+        await self.add_emoji_to_bot(inter, name, data[2], data[1], nsfw)
 
     @commands.slash_command(
         name='add',

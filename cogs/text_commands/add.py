@@ -4,6 +4,7 @@ import re
 import asyncio
 import aiohttp
 from datetime import datetime
+from utils import fetch_image
 from utils.database import Database
 import disnake
 from disnake.ext import commands
@@ -31,113 +32,94 @@ class TextCmdsAdd(commands.Cog, name='Add Emojis'):
             await self.http.close()
         self.bot.loop.create_task(close_http_session())
 
-    @commands.command(name='add', description='Adds custom emoji from server to bot for further usage')
-    async def cmd_add(self, ctx: commands.Context, name: str, emoji: str, nsfw: str = '0'):
-        if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
-            return await ctx.reply(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores')
+    async def add_emoji_to_bot(self, ctx: commands.Context, name: str, image: bytes, animated: bool, nsfw: bool = False):
+        if animated:
+            guild_id = await self.db.get_available_guild('animated')
+        else:
+            guild_id = await self.db.get_available_guild('static')
 
-        if await self.db.get_emoji(name):
-            return await ctx.reply(f':x: `{name}` is already taken, try other emoji name')
+        if guild_id is None:
+            return await ctx.reply(':x: Emoji was not uploaded: `NO_FREE_AVAILABLE_GUILDS`\nPlease, contact to Bot Developer')
+        guild = self.bot.get_guild(guild_id)
 
-        NSFW = True if nsfw in ['is-nsfw', 'is_nsfw', 'isnsfw', 'nsfw', '1', 'yes', 'yeah', 'y', 'true', '18+'] else False
+        try:
+            result = await guild.create_custom_emoji(name=name, image=image, reason=f'Addition Requested by {ctx.author.id}')
+        except disnake.errors.HTTPException as e:
+            if e.status == 429:
+                await ctx.reply(f':x: Bot has rate limited: `{e}`')
+            else:
+                await ctx.reply(f':x: Emoji was not added to bot. Error: `{e}`')
+        else:
+            await self.db.add_emoji(result.id, result.name, result.animated, nsfw, datetime.utcnow(), ctx.author.id, guild.id)
 
+            if animated:
+                await self.db.increase_usage_guild(guild.id, 'animated')
+            else:
+                await self.db.increase_usage_guild(guild.id, 'static')
+
+            if nsfw:
+                await ctx.reply(f':white_check_mark: Emoji {result} was added to bot and **marked as NSFW** only usage')
+            else:
+                await ctx.reply(f':white_check_mark: Emoji {result} was added to bot')
+
+    async def add_emoji_from_custom(self, ctx: commands.Context, name: str, emoji: str, nsfw: bool):
         match = self.REGEX_EMOJI.match(emoji)
         if match is None:
             return await ctx.reply(f':x: `{emoji}`: That\'s not an emoji')
         animated, emoji_id = match.groups()
 
-        async with self.http.get(
-            'https://cdn.discordapp.com/emojis/{0}.{1}?size=128'.format(
-                emoji_id, 'gif' if animated else 'png'
-            )
-        ) as response:
-            image = await response.read()
+        uri = 'https://cdn.discordapp.com/emojis/{0}.{1}?size=128'.format(
+            emoji_id, 'gif' if animated else 'png'
+        )
+        data = await fetch_image(self.http, uri)
 
-        if animated:
-            guild_id = await self.db.get_available_guild('animated')
-        else:
-            guild_id = await self.db.get_available_guild('static')
+        if data[0] is False:
+            return await ctx.reply(':x: Something went wrong while loading image')
 
-        if guild_id is None:
-            return await ctx.reply(':x: Emoji was not uploaded: `NO_FREE_AVAILABLE_GUILDS`\nPlease, contact to Bot Developer')
+        await self.add_emoji_to_bot(ctx, name, data[2], data[1], nsfw)
 
-        guild = self.bot.get_guild(guild_id)
-
+    async def add_emoji_from_url(self, ctx: commands.Context, name: str, url: str, nsfw: bool):
         try:
-            result = await guild.create_custom_emoji(name=name, image=image, reason=f'Addition Requested by {ctx.author.id}')
-        except disnake.errors.HTTPException as e:
-            if e.status == 429:
-                await ctx.reply(f':x: Bot has rate limited: `{e}`')
-            else:
-                await ctx.reply(f':x: Emoji was not added to bot. Error: `{e}`')
-        else:
-            await self.db.add_emoji(result.id, result.name, result.animated, NSFW, datetime.utcnow(), ctx.author.id, guild.id)
+            data = await fetch_image(self.http, url)
+        except aiohttp.InvalidURL:
+            return await ctx.reply(':x: Invalid URL')
+        except asyncio.exceptions.TimeoutError:
+            return await ctx.reply(':x: Timeout while downloading image from URL')
+        except Exception as exc:
+            return await ctx.reply(f':x: Exception while downloading image from URL. Error: `{exc.__class__.__name__}: {exc}`')
 
-            if animated:
-                await self.db.increase_usage_guild(guild.id, 'animated')
+        if data[0] is False:
+            if data[1] == 1:
+                await ctx.reply(':x: Requested URL is not an image')
+            elif data[1] == 2:
+                await ctx.reply(f':x: Got error while downloading image from URL. HTTP Code: {data[2]}')
             else:
-                await self.db.increase_usage_guild(guild.id, 'static')
+                await ctx.reply(f':x: Something went wrong while loading image')
+            return
 
-            if NSFW:
-                await ctx.reply(f':white_check_mark: Emoji {result} was added to bot and **marked as NSFW** only usage')
-            else:
-                await ctx.reply(f':white_check_mark: Emoji {result} was added to bot')
+        await self.add_emoji_to_bot(ctx, name, data[2], data[1], nsfw)
 
-    @commands.command(name='add-from-url', description='Adds emoji from URL with image to bot for further usage')
-    async def cmd_addfromurl(self, ctx: commands.Context, name: str, url: str, nsfw: str = '0'):
+    @commands.command(name='add', description='Adds custom emoji from server to bot for further usage')
+    async def cmd_add(self, ctx: commands.Context, name: str, emoji: str, nsfw: str = '0'):
         if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
             return await ctx.reply(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores')
-
         if await self.db.get_emoji(name):
             return await ctx.reply(f':x: `{name}` is already taken, try other emoji name')
 
         NSFW = True if nsfw in ['is-nsfw', 'is_nsfw', 'isnsfw', 'nsfw', '1', 'yes', 'yeah', 'y', 'true', '18+'] else False
 
-        try:
-            async with self.http.get(url) as response:
-                if response.status == 200:
-                    if response.headers['content-type'] not in ['image/png', 'image/jpeg', 'image/gif']:
-                        return await ctx.reply(':x: Requested URL is not an image')
-                    animated = True if response.headers['content-type'] == 'image/gif' else False
-                    image = await response.read()
-                else:
-                    return await ctx.reply(f':x: Got error while downloading image from URL. HTTP Code: `{response.status}`')
-        except asyncio.exceptions.TimeoutError:
-            return await ctx.reply(':x: Timeout while downloading image from URL')
-        except aiohttp.InvalidURL:
-            return await ctx.reply(':x: Invalid URL')
-        except Exception as e:
-            return await ctx.reply(f':x: Exception while downloading image from URL. Error: `{e}`')
+        await self.add_emoji_from_custom(ctx, name, emoji, NSFW)
 
-        if animated:
-            guild_id = await self.db.get_available_guild('animated')
-        else:
-            guild_id = await self.db.get_available_guild('static')
+    @commands.command(name='add-from-url', description='Adds emoji from URL with image to bot for further usage')
+    async def cmd_addfromurl(self, ctx: commands.Context, name: str, url: str, nsfw: str = '0'):
+        if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
+            return await ctx.reply(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores')
+        if await self.db.get_emoji(name):
+            return await ctx.reply(f':x: `{name}` is already taken, try other emoji name')
 
-        if guild_id is None:
-            return await ctx.reply(':x: Emoji was not uploaded: `NO_FREE_AVAILABLE_GUILDS`\nPlease, contact to Bot Developer')
+        NSFW = True if nsfw in ['is-nsfw', 'is_nsfw', 'isnsfw', 'nsfw', '1', 'yes', 'yeah', 'y', 'true', '18+'] else False
 
-        guild = self.bot.get_guild(guild_id)
-
-        try:
-            result = await guild.create_custom_emoji(name=name, image=image, reason=f'Addition Requested by {ctx.author.id}')
-        except disnake.errors.HTTPException as e:
-            if e.status == 429:
-                await ctx.reply(f':x: Bot has rate limited: `{e}`')
-            else:
-                await ctx.reply(f':x: Emoji was not added to bot. Error: `{e}`')
-        else:
-            await self.db.add_emoji(result.id, result.name, result.animated, NSFW, datetime.utcnow(), ctx.author.id, guild.id)
-
-            if animated:
-                await self.db.increase_usage_guild(guild.id, 'animated')
-            else:
-                await self.db.increase_usage_guild(guild.id, 'static')
-
-            if NSFW:
-                await ctx.send(f':white_check_mark: Emoji {result} was added to bot and **marked as NSFW** only usage')
-            else:
-                await ctx.send(f':white_check_mark: Emoji {result} was added to bot')
+        await self.add_emoji_from_url(ctx, name, url, NSFW)
 
 
 def setup(bot: commands.Bot):
