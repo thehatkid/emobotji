@@ -7,9 +7,7 @@ from disnake.ext import commands
 log = logging.getLogger(__name__)
 
 
-class Emoji(commands.Cog):
-    """Message Event Handling cog for Discord Bot."""
-
+class CogEmoji(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.db: Database = bot.db
@@ -97,10 +95,11 @@ class Emoji(commands.Cog):
         return ''.join(emojis)
 
 
-def setup(bot):
-    bot.add_cog(Emoji(bot))
-    log.info('Loaded cog.')
+def setup(bot: commands.Bot):
+    cog = CogEmoji(bot)
+    bot.add_cog(cog)
+    log.info('Loaded')
 
 
 def teardown(bot):
-    log.info('Unloaded cog.')
+    log.info('Unloaded')

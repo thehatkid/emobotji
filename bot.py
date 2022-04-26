@@ -2,6 +2,7 @@ import logging
 import yaml
 from datetime import datetime
 from utils.database import Database
+from utils.help import HelpCommand
 import disnake
 from disnake.ext import commands
 
@@ -29,13 +30,21 @@ intents = disnake.Intents(
 # Initialize Bot Class
 bot = commands.Bot(
     command_prefix=cfg['bot']['prefix'],
-    help_command=None,
+    help_command=HelpCommand(),
     intents=intents,
+    allowed_mentions=disnake.AllowedMentions(
+        everyone=False,
+        users=True,
+        roles=False,
+        replied_user=False
+    ),
     status=disnake.Status.online,
     activity=disnake.Activity(
         type=disnake.ActivityType.playing,
         name=f'with Emojis | Help: {cfg["bot"]["prefix"]}help'
-    )
+    ),
+    sync_commands=True,
+    sync_commands_debug=True
 )
 # Connect MySQL Database
 bot.db = Database(
@@ -58,13 +67,9 @@ bot.loop.create_task(after_bot_ready())
 
 # Loading Cogs
 bot.load_extension('cogs.events')
-bot.load_extension('cogs.commands')
-bot.load_extension('cogs.categories.misc')
-bot.load_extension('cogs.categories.listing')
-bot.load_extension('cogs.categories.add')
-bot.load_extension('cogs.categories.manage')
-bot.load_extension('cogs.help')
 bot.load_extension('cogs.emoji')
+bot.load_extensions('cogs/app_commands')
+bot.load_extensions('cogs/text_commands')
 
 # Running Bot from Bot Token
 bot.run(cfg['bot']['token'])

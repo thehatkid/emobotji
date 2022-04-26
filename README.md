@@ -27,5 +27,5 @@ Want find favorite emoji? `e!search <name_or_word>`
 **Notice:** You can't invite right now Emobotji to your Discord Server, the bot is
 currently on 100 servers when the <u>bot is not verified by Discord</u>.
 
-- ~~To add the Emobotji to your server, [click here](https://discord.com/oauth2/authorize?client_id=841879090038177792&permissions=346176&scope=bot)~~
+- ~~To add the Emobotji to your server, [click here](https://discord.com/api/oauth2/authorize?client_id=841879090038177792&scope=bot%20applications.commands)~~
 - To get bot's commands list: `e!help`
