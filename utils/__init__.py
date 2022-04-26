@@ -19,5 +19,4 @@ async def fetch_image(session: aiohttp.ClientSession, url: str) -> tuple:
             image = await response.read()
 
             return (True, animated, image)
-        else:
-            return (False, 2, response.status)
+        return (False, 2, response.status)
