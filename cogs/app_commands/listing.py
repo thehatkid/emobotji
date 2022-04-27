@@ -23,7 +23,12 @@ class AppCmdsListing(commands.Cog):
         ]
     )
     async def scmd_list(self, inter: disnake.AppCmdInter, page: int = 1):
-        EMOJI_LIST = await self.db.get_emoji_list(inter.channel.nsfw)
+        if isinstance(inter.channel, disnake.TextChannel):
+            nsfw = inter.channel.nsfw
+        else:
+            nsfw = False
+
+        EMOJI_LIST = await self.db.get_emoji_list(nsfw)
 
         if len(EMOJI_LIST) == 0:
             return await inter.response.send_message(':x: Bot not have any emojis', ephemeral=True)
@@ -69,7 +74,12 @@ class AppCmdsListing(commands.Cog):
         ]
     )
     async def scmd_search(self, inter: disnake.AppCmdInter, query: str):
-        EMOJI_LIST = await self.db.get_emoji_list_by_name(query, inter.channel.nsfw)
+        if isinstance(inter.channel, disnake.TextChannel):
+            nsfw = inter.channel.nsfw
+        else:
+            nsfw = False
+
+        EMOJI_LIST = await self.db.get_emoji_list_by_name(query, nsfw)
 
         if len(EMOJI_LIST) == 0:
             return await inter.response.send_message(f':x: Emoji with name/word `{query}` not exists or not found.', ephemeral=True)

@@ -19,10 +19,10 @@ class CogEmoji(commands.Cog):
         if message.author.bot:
             return
 
-        if isinstance(message.channel, disnake.DMChannel):
-            is_nsfw = False
-        else:
+        if isinstance(message.channel, disnake.TextChannel):
             is_nsfw = message.channel.nsfw
+        else:
+            is_nsfw = False
 
         emojis = await self.parse_emojis(message.content, is_nsfw)
         if emojis:

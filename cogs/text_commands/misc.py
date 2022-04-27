@@ -18,10 +18,10 @@ class TextCmdsMisc(commands.Cog, name='Miscellaneous'):
 
     @commands.command(name='info', description='Shows an embed with emoji infomation by name')
     async def cmd_info(self, ctx: commands.Context, name: str):
-        if isinstance(ctx.channel, disnake.DMChannel):
-            is_nsfw = False
+        if isinstance(ctx.channel, disnake.TextChannel):
+            is_nsfw = ctx.channel.nsfw
         else:
-            is_nsfw = True if ctx.channel.nsfw else False
+            is_nsfw = False
 
         if not re.fullmatch(r'\w{2,32}', name, re.ASCII):
             return await ctx.reply(f':x: `{name}` is not a valid emoji name; use 2–32 English letters, numbers and underscores')

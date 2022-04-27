@@ -15,12 +15,12 @@ class TextCmdsListing(commands.Cog, name='Listing'):
 
     @commands.command(name='list', description='Shows an embed with bot emoji list')
     async def cmd_list(self, ctx: commands.Context, page: int = 1):
-        if isinstance(ctx.channel, disnake.DMChannel):
-            NSFW = False
+        if isinstance(ctx.channel, disnake.TextChannel):
+            nsfw = ctx.channel.nsfw
         else:
-            NSFW = True if ctx.channel.nsfw else False
+            nsfw = False
 
-        if NSFW:
+        if nsfw:
             EMOJI_LIST = await self.db.get_emoji_list(True)
         else:
             EMOJI_LIST = await self.db.get_emoji_list(False)
@@ -60,12 +60,12 @@ class TextCmdsListing(commands.Cog, name='Listing'):
 
     @commands.command(name='search', description='Searches an bot emoji list with given name/word', aliases=['find'])
     async def cmd_search(self, ctx: commands.Context, name: str):
-        if isinstance(ctx.channel, disnake.DMChannel):
-            NSFW = False
+        if isinstance(ctx.channel, disnake.TextChannel):
+            nsfw = ctx.channel.nsfw
         else:
-            NSFW = True if ctx.channel.nsfw else False
+            nsfw = False
 
-        if NSFW:
+        if nsfw:
             EMOJI_LIST = await self.db.get_emoji_list_by_name(name, True)
         else:
             EMOJI_LIST = await self.db.get_emoji_list_by_name(name, False)

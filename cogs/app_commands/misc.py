@@ -31,6 +31,11 @@ class AppCmdsMisc(commands.Cog):
                 ephemeral=True
             )
 
+        if isinstance(inter.channel, disnake.TextChannel):
+            nsfw = inter.channel.nsfw
+        else:
+            nsfw = False
+
         emoji_row = await self.db.get_emoji(emoji)
 
         if emoji_row is None:
@@ -45,7 +50,7 @@ class AppCmdsMisc(commands.Cog):
 
             embed = disnake.Embed(title=f':information_source: Emoji `{emoji_row["name"]}`', colour=disnake.Colour.blurple())
 
-            if emoji_row['nsfw'] and not inter.channel.nsfw:
+            if emoji_row['nsfw'] and not nsfw:
                 embed.description = '*Preview of Emoji are unavailable because that\'s NSFW*'
             else:
                 embed.set_image(url='https://cdn.discordapp.com/emojis/{0}.{1}?size=512'.format(
