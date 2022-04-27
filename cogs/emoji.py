@@ -22,7 +22,7 @@ class CogEmoji(commands.Cog):
         if isinstance(message.channel, disnake.DMChannel):
             is_nsfw = False
         else:
-            is_nsfw = True if message.channel.is_nsfw() else False
+            is_nsfw = message.channel.nsfw
 
         emojis = await self.parse_emojis(message.content, is_nsfw)
         if emojis:
@@ -40,7 +40,7 @@ class CogEmoji(commands.Cog):
         if isinstance(after.channel, disnake.DMChannel):
             is_nsfw = False
         else:
-            is_nsfw = True if after.channel.is_nsfw() else False
+            is_nsfw = after.channel.nsfw
 
         emojis = await self.parse_emojis(after.content, is_nsfw)
         if not emojis:

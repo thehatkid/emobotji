@@ -90,7 +90,12 @@ class AppCmdsEmoji(commands.Cog):
     @scmd_emoji.autocomplete('emoji')
     @scmd_react.autocomplete('emoji')
     async def autocomp_emojis(self, inter: disnake.AppCmdInter, name: str) -> list[str]:
-        emoji_list = await self.db.get_emoji_list(inter.channel.nsfw)
+        if isinstance(inter.channel, disnake.TextChannel):
+            nsfw = inter.channel.nsfw
+        else:
+            nsfw = False
+
+        emoji_list = await self.db.get_emoji_list(nsfw)
         emoji_names = [emoji[1] for emoji in emoji_list]
 
         if name:
