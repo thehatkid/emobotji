@@ -45,6 +45,13 @@ class CogEvents(commands.Cog):
             print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
+    @commands.Cog.listener()
+    async def on_slash_command_error(self, inter: disnake.AppCmdInter, error: Exception):
+        await inter.response.send_message(
+            f':x: Something went wrong. Error: `{error}`\nPlease contact to Bot Developer!',
+            ephemeral=True
+        )
+
 
 def setup(bot: commands.Bot):
     cog = CogEvents(bot)
