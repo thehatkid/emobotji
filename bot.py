@@ -22,6 +22,7 @@ log.info('Starting disnake {0} {1}...'.format(
 
 intents = disnake.Intents(
     guilds=True,
+    message_content=True,
     messages=True,
     guild_messages=True,
     dm_messages=True
@@ -29,7 +30,7 @@ intents = disnake.Intents(
 
 # Initialize Bot Class
 bot = commands.Bot(
-    command_prefix=cfg['bot']['prefix'],
+    command_prefix=commands.when_mentioned_or(cfg['bot']['prefix']),
     help_command=HelpCommand(),
     intents=intents,
     allowed_mentions=disnake.AllowedMentions(
